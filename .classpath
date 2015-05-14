@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/application-api/3.1.0/application-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/model-api/3.1.0/model-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/event-api/3.1.0/event-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/viewmodel-api/3.1.0/viewmodel-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/presentation-api/3.1.0/presentation-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/service-api/3.1.0/service-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/vizmap-api/3.1.0/vizmap-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/work-api/3.1.0/work-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/osgi/org.osgi.core/4.2.0/org.osgi.core-4.2.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/core-task-api/3.1.0/core-task-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/io-api/3.1.0/io-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/session-api/3.1.0/session-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/property-api/3.1.0/property-api-3.1.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/cytoscape/filter-api/3.1.0/filter-api-3.1.0.jar"/>
+	<classpathentry kind="src" output="target/classes" path="src/main/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java">
+		<attributes>
+			<attribute name="optional" value="true"/>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
