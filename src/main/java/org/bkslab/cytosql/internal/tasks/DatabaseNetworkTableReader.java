@@ -55,11 +55,10 @@ public class DatabaseNetworkTableReader extends AbstractCyNetworkReader {
 	private boolean isCanceled;
 
 	private final String networkCollectionName;
+	
 	private CyRootNetwork rootNetwork;
 	private CyNetwork network;
-	private CyNetworkFactory networkFactory;
 	private final CyNetworkNaming networkNaming; 
-	private CyNetworkViewFactory networkViewFactory;
 		
 	// Data to keep track of nodes as they are created
 	private Map<Object, CyNode> nMap;
@@ -76,20 +75,21 @@ public class DatabaseNetworkTableReader extends AbstractCyNetworkReader {
 		final CyNetworkManager cyNetworkManager,
 		final CyRootNetworkManager cyRootNetworkManager) {
 
-		super(getDummyIs(), cyApplicationManager, cyNetworkFactory, cyNetworkManager, cyRootNetworkManager);
+		super(
+			(InputStream) new ByteArrayInputStream(null),
+			cyApplicationManager.getDefaultNetworkViewRenderer().getNetworkViewFactory(),
+			cyNetworkFactory, cyNetworkManager, cyRootNetworkManager);
+		
+		this.cyApplicationManager = cyApplicationManager;
 		
 		this.networkCollectionName = networkCollectionName;
-		this.networkFactory = networkFactory;
+
 		this.networkNaming = networkNaming;
 
 		// initialized with a Tunables
 		dbConnectionInfo = new DBConnectionInfo();
 		dnmp = new DatabaseNetworkMappingParameters();
 
-	}
-	
-	private static InputStream getDummyIs(){
-		return (InputStream) new ByteArrayInputStream(null); 
 	}
 	
 	
@@ -144,13 +144,9 @@ public class DatabaseNetworkTableReader extends AbstractCyNetworkReader {
 		return result;
 	}
 	
-	public void setNetworkViewFactory(CyNetworkViewFactory networkViewFactory) {
-		this.networkViewFactory = networkViewFactory;
-	}
-	
 	@Override
 	public CyNetworkView buildCyNetworkView(final CyNetwork network){
-		final CyNetworkView view = networkViewFactory.createNetworkView(network);
+		final CyNetworkView view = this.cyNetworkViewFactory.createNetworkView(network);
 		return view;
 	}
 	
