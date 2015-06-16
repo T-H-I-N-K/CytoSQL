@@ -5,10 +5,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
-
 
 import org.bkslab.cytosql.internal.model.DBConnectionInfo;
 import org.bkslab.cytosql.internal.model.DBQuery;
@@ -31,11 +31,8 @@ public class DatabaseNetworkParser {
 	private String sqlQuery;
 	
 	private boolean isCanceled;
-
-
 		
 	public DatabaseNetworkParser(
-			Map<Object, CyNode> nMap,
 			DBConnectionInfo dbConnectionInfo,
 			DatabaseNetworkMappingParameters dnmp,
 			String sqlQuery
@@ -43,20 +40,20 @@ public class DatabaseNetworkParser {
 
 		this.dbConnectionInfo = dbConnectionInfo;
 		this.dnmp = dnmp;
-		this.nMap = nMap;
 		this.sqlQuery = sqlQuery;
-		
+
 	}
 	
 	public void parse(TaskMonitor taskMonitor, CyNetwork network) throws Exception {
 		taskMonitor.setTitle("Creating table from SQL query.");
 		taskMonitor.setProgress(0.0);
 
+		prepareNodeMap(network);
 		
 		DBQuery dbQuery = new DBQuery(dbConnectionInfo);
 		ResultSet resultSet = dbQuery.getResults(sqlQuery);
 		
-		validateParameters(resultSet);
+		validateParameters(network, resultSet);
 		
 		populateNetwork(network, resultSet);
 		
@@ -68,7 +65,20 @@ public class DatabaseNetworkParser {
 				
 	}
 	
-	private void validateParameters(ResultSet resultSet) throws Exception {
+	private void prepareNodeMap(CyNetwork network){
+		nMap = new HashMap<Object, CyNode>(10000);
+		final List<CyNode> nodes = network.getNodeList();
+		
+		for(final CyNode node : nodes){
+			final Object keyValue = network.getRow(node).getRaw(this.dnmp.getNodeJoinColumnName());
+			if(keyValue != null){
+				
+			}
+		}
+	}
+	
+	
+	private void validateParameters(CyNetwork network, ResultSet resultSet) throws Exception {
 		if (dbConnectionInfo == null)
 			throw new NullPointerException("No database connection specified.");
 
@@ -76,7 +86,7 @@ public class DatabaseNetworkParser {
 			throw new NullPointerException("No DatabaseNetworkMappingParameters specified.");
 		}
 		
-		
+		dnmp.validate(network, resultSet);
 	}
 	
 
@@ -89,7 +99,7 @@ public class DatabaseNetworkParser {
 		
 		while(resultSet.next()){
 			if(isCanceled){
-				System.out.println("Loading canceld.");
+				System.out.println("Loading canceled.");
 				resultSet.close();
 				network.dispose();
 				network = null;
@@ -236,5 +246,9 @@ public class DatabaseNetworkParser {
 		}
 	}
 	
+	
+	public void cancel(){
+		this.isCanceled = true;
+	}
 
 }

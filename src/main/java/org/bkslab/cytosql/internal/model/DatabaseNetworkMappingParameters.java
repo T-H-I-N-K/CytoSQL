@@ -1,11 +1,10 @@
 package org.bkslab.cytosql.internal.model;
 
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.work.Tunable;
 
 public class DatabaseNetworkMappingParameters {
@@ -31,6 +30,8 @@ public class DatabaseNetworkMappingParameters {
 	@Tunable
 	private Map<String, String> networkTitle2ID = null;
 
+	@Tunable
+	private String nodeJoinColumnName;
 	
 	@Tunable
 	private boolean isMutable;
@@ -51,6 +52,7 @@ public class DatabaseNetworkMappingParameters {
 	@Tunable
 	private String defInteraction;
 	
+	// which a null constructor required for Tunables?
 	public DatabaseNetworkMappingParameters(){}
 	
 	public DatabaseNetworkMappingParameters(
@@ -60,6 +62,7 @@ public class DatabaseNetworkMappingParameters {
 			final int target,
 			final int interaction,
 			final String defInteraction,
+			final String nodeJoinColumnName,
 			final int startNumber,
 			final boolean isMutable,
 			final boolean isDirected) throws Exception{
@@ -114,6 +117,10 @@ public class DatabaseNetworkMappingParameters {
 		}
 	}
 	
+	public String getNodeJoinColumnName() {
+		return nodeJoinColumnName;
+	}
+	
 	public boolean isEdgeAttribute(final int i){
 		return (i != getSourceIndex())  && (i != getTargetIndex()) &&	(i != getInteractionIndex());
 	}
@@ -125,6 +132,40 @@ public class DatabaseNetworkMappingParameters {
 	public boolean isDirected() {
 		return isDirected;
 	}
+	
+	
+	public void validate(CyNetwork network, ResultSet resultSet) throws Exception{
+		if(this.source == this.target){
+			throw new Exception("The source and target columns cannot be the same.");
+		}
+		
+		if(this.source == this.interaction){
+			throw new Exception("The source and interaction columns cannot be the same.");
+		}
+		
+		if(this.target == this.interaction){
+			throw new Exception("The target and interaction columns cannot be the same.");
+		}
+		
+		int ncol = resultSet.getMetaData().getColumnCount();
+		if(this.source < 0 | this.source >= ncol){
+			throw new Exception("The source column is '" + this.source + "', but it must be in the range [0" + "," + ncol + "]");
+		}
+		
+		if(this.target < 0 | this.target >= ncol){
+			throw new Exception("The target column is '" + this.target + "', but it must be in the range [0" + "," + ncol + "]");
+		}
+
+		if(this.target < 0 | this.target >= ncol){
+			throw new Exception("The interaction column is '" + this.interaction + "', but it must be in the range [0" + "," + ncol + "]");
+		}
+
+		if(ncol != listAttributeTypes.length){
+			throw new Exception(
+				"The listAttributeTypes has '" + listAttributeTypes.length + "', " +
+				"but this does not match the number of columsn in the query '" + ncol + "'");
+		}
+		
 	}
 	
 }

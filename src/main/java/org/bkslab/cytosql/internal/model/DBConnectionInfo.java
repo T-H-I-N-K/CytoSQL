@@ -1,7 +1,6 @@
 package org.bkslab.cytosql.internal.model;
 
 import org.cytoscape.work.Tunable;
-import org.cytoscape.work.util.ListMultipleSelection;
 import org.cytoscape.work.util.ListSingleSelection;
 
 

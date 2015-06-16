@@ -7,23 +7,23 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+//import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.Statement;
-import java.sql.Types;
+//import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Hashtable;
+//import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
+//import java.util.Vector;
 
 import org.apache.commons.dbutils.DbUtils;
 
 import javax.swing.JOptionPane;
-import javax.swing.table.TableModel;
+//import javax.swing.table.TableModel;
 
-import org.bkslab.cytosql.internal.prefs.CustomTableModel;
-import org.bkslab.cytosql.internal.util.Options;
+//import org.bkslab.cytosql.internal.prefs.CustomTableModel;
+//import org.bkslab.cytosql.internal.util.Options;
 
 public class DBQuery {
 
@@ -216,171 +216,171 @@ public class DBQuery {
 		return list;
 	}
 
-	/**
-	 * @param tableName
-	 *            table name
-	 * @return table columns
-	 */
-	public synchronized TableModel getTableColumns(String tableName) {
-
-		CustomTableModel model = new CustomTableModel(new String[] {
-				Options.getInstance().getResource("column"),
-				Options.getInstance().getResource("data type"),
-				Options.getInstance().getResource("pk"),
-				Options.getInstance().getResource("null?"),
-				Options.getInstance().getResource("default") }, new Class[] {
-				String.class, String.class, Integer.class, Boolean.class,
-				String.class });
-		try {
-			Hashtable<String, String> pk = new Hashtable<String, String>();
-			String tName = tableName;
-			String schema = null;
-			if (tName.indexOf(".") > -1) {
-				schema = tName.substring(0, tName.indexOf("."));
-				tName = tName.substring(tName.indexOf(".") + 1);
-			}
-			ResultSet rset0 = null;
-			try {
-				rset0 = getConnection().getMetaData().getPrimaryKeys(null,
-						schema, tName.toString());
-				while (rset0.next()) {
-					pk.put(rset0.getString(4), rset0.getString(5));
-				}
-			} catch (SQLException ex1) {
-				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
-				if (ex1.getMessage().indexOf(
-						"Driver does not support this function") == -1)
-					ex1.printStackTrace();
-			} finally {
-				try {
-					Statement stmt = rset0 == null ? null : rset0
-							.getStatement();
-					try {
-						rset0.close();
-					} catch (Exception ex3) {
-					}
-					try {
-						stmt.close();
-					} catch (Exception ex4) {
-					}
-				} catch (Exception ex1) {
-				}
-			}
-
-			Hashtable<String, String> defaults = new Hashtable<String, String>();
-			ResultSet rset1 = null;
-			try {
-				rset1 = getConnection().getMetaData().getColumns(null, schema,
-						tName, null);
-				String colValue = null;
-				String colName = null;
-				while (rset1.next()) {
-					try {
-						colName = rset1.getString(4);
-						colValue = rset1.getString(13);
-						if (colValue != null) {
-							defaults.put(colName, colValue);
-						}
-					} catch (SQLException ex2) {
-					}
-				}
-			} catch (SQLException ex1) {
-				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
-				if (ex1.getMessage().indexOf(
-						"Driver does not support this function") == -1)
-					ex1.printStackTrace();
-			} finally {
-				try {
-					Statement stmt = rset1 == null ? null : rset1
-							.getStatement();
-					try {
-						rset1.close();
-					} catch (Exception ex3) {
-					}
-					try {
-						stmt.close();
-					} catch (Exception ex4) {
-					}
-				} catch (Exception ex1) {
-				}
-			}
-
-			ResultSet rset = null;
-			try {
-				rset = getConnection().createStatement().executeQuery(
-						"select * from " + tableName);
-				Vector<String> data = new Vector<String>();
-
-				String type = null;
-				for (int i = 0; i < rset.getMetaData().getColumnCount(); i++) {
-					Vector<Object> row = new Vector<Object>();
-					row.add(rset.getMetaData().getColumnName(i + 1));
-					type = rset.getMetaData().getColumnTypeName(i + 1);
-					if ((rset.getMetaData().getColumnType(i + 1) == Types.VARCHAR
-							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARCHAR || rset
-							.getMetaData().getColumnType(i + 1) == Types.CHAR)
-							&& rset.getMetaData().getPrecision(i + 1) == 0) // case
-																			// MySQL...
-						type += "("
-								+ rset.getMetaData()
-										.getColumnDisplaySize(i + 1) + ")";
-					else if (rset.getMetaData().getColumnType(i + 1) == Types.BIGINT
-							|| rset.getMetaData().getColumnType(i + 1) == Types.CHAR
-							|| rset.getMetaData().getColumnType(i + 1) == Types.INTEGER
-							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARBINARY
-							|| rset.getMetaData().getColumnType(i + 1) == Types.NUMERIC
-							&& rset.getMetaData().getPrecision(i + 1) > 0
-							&& rset.getMetaData().getScale(i + 1) == 0
-							|| rset.getMetaData().getColumnType(i + 1) == Types.SMALLINT
-							|| rset.getMetaData().getColumnType(i + 1) == Types.VARCHAR
-							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARCHAR)
-						type += "(" + rset.getMetaData().getPrecision(i + 1)
-								+ ")";
-					else if (rset.getMetaData().getColumnType(i + 1) == Types.DECIMAL
-							|| rset.getMetaData().getColumnType(i + 1) == Types.DOUBLE
-							|| rset.getMetaData().getColumnType(i + 1) == Types.FLOAT
-							|| rset.getMetaData().getColumnType(i + 1) == Types.NUMERIC
-							&& rset.getMetaData().getPrecision(i + 1) > 0
-							|| rset.getMetaData().getColumnType(i + 1) == Types.REAL)
-						type += "(" + rset.getMetaData().getPrecision(i + 1)
-								+ "," + rset.getMetaData().getScale(i + 1)
-								+ ")";
-					row.add(type);
-					row.add(pk.containsKey(rset.getMetaData().getColumnName(
-							i + 1)) ? new Integer(pk
-							.get(rset.getMetaData().getColumnName(i + 1))
-							.toString().trim()) : null);
-					row.add(new Boolean(
-							rset.getMetaData().isNullable(i + 1) == ResultSetMetaData.columnNullable));
-					row.add(defaults.get(rset.getMetaData()
-							.getColumnName(i + 1)));
-					data.add(row);
-				}
-				model.setDataVector(data);
-				return model;
-			} catch (Exception ex1) {
-				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
-				if (ex1.getMessage().indexOf(
-						"Driver does not support this function") == -1)
-					ex1.printStackTrace();
-			} finally {
-				try {
-					Statement stmt = rset == null ? null : rset.getStatement();
-					try {
-						rset.close();
-					} catch (Exception ex3) {
-					}
-					try {
-						stmt.close();
-					} catch (Exception ex4) {
-					}
-				} catch (Exception ex1) {
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		return model;
-	}
+//	/**
+//	 * @param tableName
+//	 *            table name
+//	 * @return table columns
+//	 */
+//	public synchronized TableModel getTableColumns(String tableName) {
+//
+//		CustomTableModel model = new CustomTableModel(new String[] {
+//				Options.getInstance().getResource("column"),
+//				Options.getInstance().getResource("data type"),
+//				Options.getInstance().getResource("pk"),
+//				Options.getInstance().getResource("null?"),
+//				Options.getInstance().getResource("default") }, new Class[] {
+//				String.class, String.class, Integer.class, Boolean.class,
+//				String.class });
+//		try {
+//			Hashtable<String, String> pk = new Hashtable<String, String>();
+//			String tName = tableName;
+//			String schema = null;
+//			if (tName.indexOf(".") > -1) {
+//				schema = tName.substring(0, tName.indexOf("."));
+//				tName = tName.substring(tName.indexOf(".") + 1);
+//			}
+//			ResultSet rset0 = null;
+//			try {
+//				rset0 = getConnection().getMetaData().getPrimaryKeys(null,
+//						schema, tName.toString());
+//				while (rset0.next()) {
+//					pk.put(rset0.getString(4), rset0.getString(5));
+//				}
+//			} catch (SQLException ex1) {
+//				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
+//				if (ex1.getMessage().indexOf(
+//						"Driver does not support this function") == -1)
+//					ex1.printStackTrace();
+//			} finally {
+//				try {
+//					Statement stmt = rset0 == null ? null : rset0
+//							.getStatement();
+//					try {
+//						rset0.close();
+//					} catch (Exception ex3) {
+//					}
+//					try {
+//						stmt.close();
+//					} catch (Exception ex4) {
+//					}
+//				} catch (Exception ex1) {
+//				}
+//			}
+//
+//			Hashtable<String, String> defaults = new Hashtable<String, String>();
+//			ResultSet rset1 = null;
+//			try {
+//				rset1 = getConnection().getMetaData().getColumns(null, schema,
+//						tName, null);
+//				String colValue = null;
+//				String colName = null;
+//				while (rset1.next()) {
+//					try {
+//						colName = rset1.getString(4);
+//						colValue = rset1.getString(13);
+//						if (colValue != null) {
+//							defaults.put(colName, colValue);
+//						}
+//					} catch (SQLException ex2) {
+//					}
+//				}
+//			} catch (SQLException ex1) {
+//				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
+//				if (ex1.getMessage().indexOf(
+//						"Driver does not support this function") == -1)
+//					ex1.printStackTrace();
+//			} finally {
+//				try {
+//					Statement stmt = rset1 == null ? null : rset1
+//							.getStatement();
+//					try {
+//						rset1.close();
+//					} catch (Exception ex3) {
+//					}
+//					try {
+//						stmt.close();
+//					} catch (Exception ex4) {
+//					}
+//				} catch (Exception ex1) {
+//				}
+//			}
+//
+//			ResultSet rset = null;
+//			try {
+//				rset = getConnection().createStatement().executeQuery(
+//						"select * from " + tableName);
+//				Vector<String> data = new Vector<String>();
+//
+//				String type = null;
+//				for (int i = 0; i < rset.getMetaData().getColumnCount(); i++) {
+//					Vector<Object> row = new Vector<Object>();
+//					row.add(rset.getMetaData().getColumnName(i + 1));
+//					type = rset.getMetaData().getColumnTypeName(i + 1);
+//					if ((rset.getMetaData().getColumnType(i + 1) == Types.VARCHAR
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARCHAR || rset
+//							.getMetaData().getColumnType(i + 1) == Types.CHAR)
+//							&& rset.getMetaData().getPrecision(i + 1) == 0) // case
+//																			// MySQL...
+//						type += "("
+//								+ rset.getMetaData()
+//										.getColumnDisplaySize(i + 1) + ")";
+//					else if (rset.getMetaData().getColumnType(i + 1) == Types.BIGINT
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.CHAR
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.INTEGER
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARBINARY
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.NUMERIC
+//							&& rset.getMetaData().getPrecision(i + 1) > 0
+//							&& rset.getMetaData().getScale(i + 1) == 0
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.SMALLINT
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.VARCHAR
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.LONGVARCHAR)
+//						type += "(" + rset.getMetaData().getPrecision(i + 1)
+//								+ ")";
+//					else if (rset.getMetaData().getColumnType(i + 1) == Types.DECIMAL
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.DOUBLE
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.FLOAT
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.NUMERIC
+//							&& rset.getMetaData().getPrecision(i + 1) > 0
+//							|| rset.getMetaData().getColumnType(i + 1) == Types.REAL)
+//						type += "(" + rset.getMetaData().getPrecision(i + 1)
+//								+ "," + rset.getMetaData().getScale(i + 1)
+//								+ ")";
+//					row.add(type);
+//					row.add(pk.containsKey(rset.getMetaData().getColumnName(
+//							i + 1)) ? new Integer(pk
+//							.get(rset.getMetaData().getColumnName(i + 1))
+//							.toString().trim()) : null);
+//					row.add(new Boolean(
+//							rset.getMetaData().isNullable(i + 1) == ResultSetMetaData.columnNullable));
+//					row.add(defaults.get(rset.getMetaData()
+//							.getColumnName(i + 1)));
+//					data.add(row);
+//				}
+//				model.setDataVector(data);
+//				return model;
+//			} catch (Exception ex1) {
+//				// JOptionPane.showMessageDialog(parent,"Error while fetching PKs:\n"+ex1.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);
+//				if (ex1.getMessage().indexOf(
+//						"Driver does not support this function") == -1)
+//					ex1.printStackTrace();
+//			} finally {
+//				try {
+//					Statement stmt = rset == null ? null : rset.getStatement();
+//					try {
+//						rset.close();
+//					} catch (Exception ex3) {
+//					}
+//					try {
+//						stmt.close();
+//					} catch (Exception ex4) {
+//					}
+//				} catch (Exception ex1) {
+//				}
+//			}
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+//		return model;
+//	}
 
 }
