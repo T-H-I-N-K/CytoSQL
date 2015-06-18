@@ -1,4 +1,4 @@
-package org.bkslab.cytosql.internal.model;
+package org.bkslab.CytoSQL.internal.model;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 //import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -17,21 +18,28 @@ import java.util.ArrayList;
 import java.util.List;
 //import java.util.Vector;
 
+
+
+
 import org.apache.commons.dbutils.DbUtils;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
 
 import javax.swing.JOptionPane;
 //import javax.swing.table.TableModel;
 
-//import org.bkslab.cytosql.internal.prefs.CustomTableModel;
-//import org.bkslab.cytosql.internal.util.Options;
+//import org.bkslab.CytoSQL.internal.prefs.CustomTableModel;
+//import org.bkslab.CytoSQL.internal.util.Options;
 
 public class DBQuery {
 
-	Connection conn;
-
+	private Connection conn;
+	private Statement st;
+	private ResultSet rs;
+	
 	public DBQuery(final DBConnectionInfo conn_info) throws SQLException{
 		makeConnection(
-			conn_info.driver.getSelectedValue(),
+			conn_info.driver,
 			conn_info.url,
 			conn_info.database,
 			conn_info.user,
@@ -39,15 +47,14 @@ public class DBQuery {
 	}
 
 	public void close(){
-		DbUtils.closeQuietly(conn);
+		DbUtils.closeQuietly(conn, st, rs);
 	}
 	
 	public Connection getConnection(){
 		return conn;
 	}
 	
-	
-	
+
 	/**
 	 * This method stands in for making the connection with the SQL database.
 	 */
@@ -99,13 +106,56 @@ public class DBQuery {
 	 * This method retrieves the query result as a ResultSet.
 	 */
 	public ResultSet getResults(String sql) throws SQLException {
-		Statement st = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,
-				ResultSet.CONCUR_UPDATABLE);
-		ResultSet rs = st.executeQuery(sql);
-		DbUtils.closeQuietly(st);
+		st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+		rs = st.executeQuery(sql);
 		return rs;
 	}
 
+	// TODO validate tableName and keyColumnName are not injection attacks
+	public void copyToTempTable(
+			CyNetwork network,
+			List<CyNode> nodes,
+			final String tableName,
+			final String keyColumnName) {
+		try {
+			Statement createTempTableStmt = conn.createStatement();
+			createTempTableStmt.executeUpdate(
+				"CREATE TEMPORARY TABLE " + tableName + " ( " + keyColumnName + " STRING );");
+			createTempTableStmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		try {
+			PreparedStatement insertStmt;
+			insertStmt = conn.prepareStatement(
+				"INSERT INTO TABLE " + tableName +" ( " + keyColumnName + " ) VALUES ( ? );");
+			for(CyNode node : nodes){
+				insertStmt.setString(1, network.getRow(node).get(keyColumnName, String.class));
+				insertStmt.executeUpdate();
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void deleteTempTable(
+		final String tableName){
+	
+		try {
+			Statement createTempTableStmt = conn.createStatement();
+			createTempTableStmt.executeUpdate(
+				"DROP TABLE " + tableName + ";");
+			createTempTableStmt.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
 	/**
 	 * This method gets the required data out of the ResultSet object, and
 	 * prints it to an output stream

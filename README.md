@@ -27,6 +27,19 @@ Expand a given network with additional nodes and edges from an SQL query
 * The query is executed binding a single 
 
 
+# Database Connection Information
+To connect to a database requires making the Java driver available, and then specifying the appropriate connection parameters.
+
+## SQLite Databases
+### Driver:The SQLite driver is distributed with the CytoSQL package
+### Connection Info:
+#### driver: 'org.sqlite.JDBC'
+#### url: 'jdbc:sqlite:<file_name.db3>'
+
+
+
+
+
 
 TODO:
    Store database connection information with network (SEE DBCOnnectionInfo)

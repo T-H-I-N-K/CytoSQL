@@ -7,8 +7,8 @@
       When the pom.xml file has repeated elements, it's best to use them as properties.
   -->
   <properties>
-    <bundle.symbolicName>org.bkslab.cytosql</bundle.symbolicName>
-  <bundle.namespace>org.bkslab.cytosql.internal</bundle.namespace>
+    <bundle.symbolicName>org.bkslab.CytoSQL</bundle.symbolicName>
+  <bundle.namespace>org.bkslab.CytoSQL.internal</bundle.namespace>
   <cytoscape.api.version>3.1.0</cytoscape.api.version>
 
   <maven-compiler-plugin.version>2.0.2</maven-compiler-plugin.version>
@@ -26,7 +26,7 @@
 
   An "artifactId" is the name of the project.
   -->
-  <artifactId>cytosql</artifactId>
+  <artifactId>CytoSQL</artifactId>
   <version>2.0</version>
 
   <!--
@@ -44,169 +44,226 @@
   -->
   <build>
   <plugins>
-  <!--
-  The maven-compiler-plugin configures the Java
-  compiler Maven uses to build the project.
-  -->
-  <plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-compiler-plugin</artifactId>
-  <version>${maven-compiler-plugin.version}</version>
-  <configuration>
-  <showWarnings>true</showWarnings>
-  <!--
-  These options indicate the source code is Java
-  1.7-compliant and the resulting class files
-  should be Java 1.7-compatible.
-  -->
-  <source>1.7</source>
-  <target>1.7</target>
-</configuration>
-</plugin>
+    <!--
+    The maven-compiler-plugin configures the Java
+    compiler Maven uses to build the project.
+    -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>${maven-compiler-plugin.version}</version>
+      <configuration>
+        <showWarnings>true</showWarnings>
+        <!--
+        These options indicate the source code is Java
+        1.7-compliant and the resulting class files
+        should be Java 1.7-compatible.
+        -->
+        <source>1.7</source>
+        <target>1.7</target>
+      </configuration>
+    </plugin>
 
-  <!--
-  The maven-bundle-plugin creates the metadata
-  that's necessary for an OSGi bundle.  You can
-  customize the OSGi options in the "instructions"
-  section below.
-  -->
-  <plugin>
-  <groupId>org.apache.felix</groupId>
-  <artifactId>maven-bundle-plugin</artifactId>
-  <version>${maven-bundle-plugin.version}</version>
-  <extensions>true</extensions>
-  <configuration>
-  <instructions>
-  <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
-  <Bundle-Version>${project.version}</Bundle-Version>
-  <Export-Package>!org.bkslab.CytoSQL.internal.*</Export-Package>
-  <Private-Package>org.bkslab.CytoSQL.internal.*</Private-Package>
-  <Bundle-Activator>org.bkslab.CytoSQL.internal.CyActivator</Bundle-Activator>
+    <!--
+    The maven-bundle-plugin creates the metadata
+    that's necessary for an OSGi bundle.  You can
+    customize the OSGi options in the "instructions"
+    section below.
+    -->
+    <plugin>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>maven-bundle-plugin</artifactId>
+      <version>${maven-bundle-plugin.version}</version>
+      <extensions>true</extensions>
+      <configuration>
+        <instructions>
+          <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
+          <Bundle-Version>${project.version}</Bundle-Version>
+          <Export-Package>!org.bkslab.CytoSQL.internal.*</Export-Package>
+          <Private-Package>org.bkslab.CytoSQL.internal.*</Private-Package>
+          <Bundle-Activator>org.bkslab.CytoSQL.internal.CyActivator</Bundle-Activator>
 
-  <Embed-Dependency>*;scope=!provided</Embed-Dependency>
-  <Embed-Transitive>true</Embed-Transitive>
-  <Import-Package>*;resolution:=optional</Import-Package>
-</instructions>
-</configuration>
-</plugin>
-</plugins>
-</build>
+          <Embed-Dependency>*;scope=!provided|test;groupId=!org.cytoscape</Embed-Dependency>
+          <Embed-Transitive>true</Embed-Transitive>
+          <Import-Package>*;resolution:=optional</Import-Package>
+        </instructions>
+      </configuration>
+    </plugin>
+    
+    <!-- For running tests -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-plugin</artifactId>
+      <version>2.18.1</version>
+      <dependencies>
+      <dependency>
+        <groupId>org.apache.maven.surefire</groupId>
+        <artifactId>surefire-junit47</artifactId>
+        <version>2.18.1</version>
+      </dependency>
+    </dependencies>
+    </plugin>
+    
+  </plugins>
+  </build>
 
   <!--
   These are repositories Maven uses to download Cytoscape API JARs we
   use in our app.
   -->
   <repositories>
-  <repository>
-  <id>cytoscape_snapshots</id>
-  <snapshots>
-  <enabled>true</enabled>
-</snapshots>
-  <releases>
-  <enabled>false</enabled>
-</releases>
-  <name>Cytoscape Snapshots</name>
-  <url>http://code.cytoscape.org/nexus/content/repositories/snapshots/</url>
-</repository>
-  <repository>
-  <id>cytoscape_releases</id>
-  <snapshots>
-  <enabled>false</enabled>
-</snapshots>
-  <releases>
-  <enabled>true</enabled>
-</releases>
-  <name>Cytoscape Releases</name>
-  <url>http://code.cytoscape.org/nexus/content/repositories/releases/</url>
-</repository>
-</repositories>
+    <repository>
+      <id>cytoscape_snapshots</id>
+      <snapshots>
+       <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <name>Cytoscape Snapshots</name>
+      <url>http://code.cytoscape.org/nexus/content/repositories/snapshots/</url>
+    </repository>
+    <repository>
+      <id>cytoscape_releases</id>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <name>Cytoscape Releases</name>
+      <url>http://code.cytoscape.org/nexus/content/repositories/releases/</url>
+    </repository>
+  </repositories>
 
   <dependencies>
+
+  <!-- OSGi core dependency -->
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>application-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.osgi</groupId>
+    <artifactId>org.osgi.core</artifactId>
+    <version>${osgi.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
+  
+  <!-- Cytoscape Dependencies -->
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>model-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>core-task-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>service-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>application-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>viewmodel-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>model-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>vizmap-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>service-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>presentation-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>viewmodel-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>work-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>vizmap-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>work-swing-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>presentation-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>layout-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
- 
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>work-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
   <dependency>
-  <groupId>org.ops4j.pax.logging</groupId>
-  <artifactId>pax-logging-api</artifactId>
-  <version>1.5.2</version>
-  <scope>provided</scope>
-</dependency>
-<dependency>
-	<groupId>commons-dbutils</groupId>
-	<artifactId>commons-dbutils</artifactId>
-	<version>1.6</version>
-	<scope>provided</scope>
-</dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>work-swing-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>layout-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
+
+  <!-- 3rd Party Dependencies -->
+  <dependency>
+    <groupId>org.ops4j.pax.logging</groupId>
+    <artifactId>pax-logging-api</artifactId>
+    <version>1.5.2</version>
+  </dependency>
+  <dependency>
+    <groupId>commons-dbutils</groupId>
+    <artifactId>commons-dbutils</artifactId>
+    <version>1.6</version>
+  </dependency>
+  <dependency>
+    <groupId>org.xerial</groupId>
+    <artifactId>sqlite-jdbc</artifactId>
+    <version>3.8.10.1</version>
+  </dependency>
 
 
-  <!-- OSGi core API -->
+  <!-- Test Dependencies -->
   <dependency>
-  <groupId>org.osgi</groupId>
-  <artifactId>org.osgi.core</artifactId>
-  <version>${osgi.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.12</version>
+    <scope>test</scope>
+  </dependency>
   <dependency>
-  <groupId>org.cytoscape</groupId>
-  <artifactId>core-task-api</artifactId>
-  <version>${cytoscape.api.version}</version>
-  <scope>provided</scope>
-</dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>2.0.14-beta</version>
+    <scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>model-impl</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <type>test-jar</type>
+	<scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>model-impl</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.cytoscape</groupId>
+    <artifactId>event-api</artifactId>
+    <version>${cytoscape.api.version}</version>
+    <type>test-jar</type>
+    <scope>test</scope>
+  </dependency>
+
+
 </dependencies>
   <groupId>org.bkslab</groupId>
-  <name>cytosql</name>
+  <name>CytoSQL</name>
   <url>https://github.com/momeara/CytoSQL</url>
   <description></description>
   <organization>

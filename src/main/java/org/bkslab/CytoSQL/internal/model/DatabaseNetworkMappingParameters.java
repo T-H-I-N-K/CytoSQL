@@ -1,4 +1,4 @@
-package org.bkslab.cytosql.internal.model;
+package org.bkslab.CytoSQL.internal.model;
 
 import java.sql.ResultSet;
 import java.util.List;
@@ -18,62 +18,62 @@ public class DatabaseNetworkMappingParameters {
 	private static final String DEF_LIST_DELIMITER = "|";
 	private static final String DEF_INTERACTION = "pp";
 	
-	@Tunable
-	private Class<?>[] listAttributeTypes;
+//	@Tunable(description="Which attributes are list attributes.")
+//	public Class<?>[] listAttributeTypes;
 	
-	@Tunable
-	private String listDelimiter;
+//	@Tunable
+//	public String listDelimiter;
 	
-	@Tunable
-	private Map<String, List<String>> attr2id;
+//	@Tunable
+//	public Map<String, List<String>> attr2id;
 	
-	@Tunable
-	private Map<String, String> networkTitle2ID = null;
+//	@Tunable
+//	public Map<String, String> networkTitle2ID = null;
 
-	@Tunable
-	private String nodeJoinColumnName;
+	@Tunable(description="Node Join Column", groups="Network Mapping")
+	public String nodeJoinColumnName;
 	
-	@Tunable
-	private boolean isMutable;
-	
-	@Tunable
-	private boolean isDirected;
+
 	
 	// these are the columns in the returned SQL ResultSet
-	@Tunable
-	private int source;
+	@Tunable(description="Source column", groups="Network Mapping")
+	public int source;
 	
-	@Tunable
-	private int target;
+	@Tunable(description="Target column", groups="Network Mapping")
+	public int target;
 	
-	@Tunable
-	private int interaction;
+	@Tunable(description="Interaction column", groups="Network Mapping")
+	public int interaction;
 	
-	@Tunable
-	private String defInteraction;
+	@Tunable(description="Default interaction", groups="Network Mapping")
+	public String defInteraction;
+		
+	@Tunable(description="Is the added network mutable?", groups="Network Mapping")
+	public boolean isMutable;
 	
-	// which a null constructor required for Tunables?
-	public DatabaseNetworkMappingParameters(){}
+	@Tunable(description="Is the network directed?", groups="Network Mapping")
+	public boolean isDirected;
+	
+	public DatabaseNetworkMappingParameters() {}
 	
 	public DatabaseNetworkMappingParameters(
-			final String listDelimiter,
-			final Class<?>[] listAttributeTypes,
+//			final String listDelimiter,
+//			final Class<?>[] listAttributeTypes,
 			final int source,
 			final int target,
 			final int interaction,
 			final String defInteraction,
 			final String nodeJoinColumnName,
-			final int startNumber,
 			final boolean isMutable,
-			final boolean isDirected) throws Exception{
+			final boolean isDirected) {
 		
-		this.listAttributeTypes = listAttributeTypes;
+//		this.listAttributeTypes = listAttributeTypes;
 		
-		if (listDelimiter == null) {
-			this.listDelimiter = DEF_LIST_DELIMITER;
-		} else {
-			this.listDelimiter = listDelimiter;
-		}
+//		if (listDelimiter == null) {
+//			this.listDelimiter = DEF_LIST_DELIMITER;
+//		} else {
+//			this.listDelimiter = listDelimiter;
+//		}
 				
 		this.source = source;
 		this.target = target;
@@ -85,17 +85,17 @@ public class DatabaseNetworkMappingParameters {
 	
 
 
-	public String getListDelimiter() {
-		return this.listDelimiter;
-	}
+//	public String getListDelimiter() {
+//		return this.listDelimiter;
+//	}
 	
-	public boolean isListAttribute(final int i) {
-		return this.listAttributeTypes[i] == null;
-	}
+//	public boolean isListAttribute(final int i) {
+//		return this.listAttributeTypes[i] == null;
+//	}
 	
-	public Class<?> getListAttributeType(final int i){
-		return this.listAttributeTypes[i];
-	}
+//	public Class<?> getListAttributeType(final int i){
+//		return this.listAttributeTypes[i];
+//	}
 	
 	public int getSourceIndex() {
 		return source;
@@ -148,23 +148,23 @@ public class DatabaseNetworkMappingParameters {
 		}
 		
 		int ncol = resultSet.getMetaData().getColumnCount();
-		if(this.source < 0 | this.source >= ncol){
+		if(this.source < 1 | this.source > ncol){
 			throw new Exception("The source column is '" + this.source + "', but it must be in the range [0" + "," + ncol + "]");
 		}
 		
-		if(this.target < 0 | this.target >= ncol){
+		if(this.target < 1 | this.target > ncol){
 			throw new Exception("The target column is '" + this.target + "', but it must be in the range [0" + "," + ncol + "]");
 		}
 
-		if(this.target < 0 | this.target >= ncol){
+		if(this.target < 1 | this.target > ncol){
 			throw new Exception("The interaction column is '" + this.interaction + "', but it must be in the range [0" + "," + ncol + "]");
 		}
 
-		if(ncol != listAttributeTypes.length){
-			throw new Exception(
-				"The listAttributeTypes has '" + listAttributeTypes.length + "', " +
-				"but this does not match the number of columsn in the query '" + ncol + "'");
-		}
+//		if(ncol != listAttributeTypes.length){
+//			throw new Exception(
+//				"The listAttributeTypes has '" + listAttributeTypes.length + "', " +
+//				"but this does not match the number of columns in the query '" + ncol + "'");
+//		}
 		
 	}
 	

@@ -1,7 +1,7 @@
-package org.bkslab.cytosql.internal.tasks;
+package org.bkslab.CytoSQL.internal.tasks;
 
-import org.bkslab.cytosql.internal.model.DBConnectionInfo;
-import org.bkslab.cytosql.internal.model.DatabaseNetworkMappingParameters;
+import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
@@ -12,24 +12,26 @@ import org.cytoscape.work.ProvidesTitle;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
 
+
 public class DatabaseNetworkTableReader extends AbstractTask {
 	
+
 	// Database parameters
 	@ContainsTunables
-	DBConnectionInfo dbConnectionInfo;
+	public DBConnectionInfo dbConnectionInfo;
 	
 	// SQL query
 	@Tunable(description="SQL Query")
-	String sqlQuery;
+	public String sqlQuery;
 
-	@ContainsTunables
-	DatabaseNetworkMappingParameters dnmp;
-	
 	@Tunable(description = "Name of new network:")
-	String name;
+	public String name;
+	
+	@ContainsTunables
+	public DatabaseNetworkMappingParameters dnmp;
 
 	
-	private final DatabaseNetworkParser parser;
+	private DatabaseNetworkParser parser;
 	
 	private boolean isCanceled;
 
@@ -37,7 +39,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	private CyNetworkFactory cyNetworkFactory;
 	private CyNetworkNaming cyNetworkNaming;
 	
-	@ProvidesTitle
+	@ProvidesTitle	
 	public String getTitle() {
 		return "Create Network from Database Query";
 	}
@@ -55,13 +57,9 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		dbConnectionInfo = new DBConnectionInfo();
 		dnmp = new DatabaseNetworkMappingParameters();
 
-		parser = new DatabaseNetworkParser(
-				dbConnectionInfo,
-				dnmp,
-				sqlQuery);
 	}
 	
-	
+
 	public void run(final TaskMonitor taskMonitor) {
 		final String suggestedName = cyNetworkNaming.getSuggestedNetworkTitle(this.name);
 		taskMonitor.setTitle("Creating network '" + suggestedName + "' from SQL query.");
@@ -71,12 +69,15 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		network.getRow(network).set(CyNetwork.NAME, suggestedName);
 		
 		taskMonitor.setProgress(0.2);
-		
+
+		parser = new DatabaseNetworkParser(dbConnectionInfo, dnmp);
+
 		try {
-			parser.parse(taskMonitor, network);
+			parser.parse(taskMonitor, network, sqlQuery);
 		} catch(Exception e){
 			System.out.println("Failed to parse SQL query into network:\n" + e.getMessage());
 			network.dispose();
+			return;
 		}
 	
 		taskMonitor.setProgress(.9);
@@ -93,7 +94,9 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	@Override
 	public void cancel(){
 		this.isCanceled = true;
-		parser.cancel();
+		if(parser != null){
+			parser.cancel();
+		}
 	}
 
 }

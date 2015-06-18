@@ -1,4 +1,4 @@
-package org.bkslab.cytosql.internal.tests;
+package org.bkslab.CytoSQL.internal.tests;
 
 import java.io.IOException;
 import java.io.PrintStream;
