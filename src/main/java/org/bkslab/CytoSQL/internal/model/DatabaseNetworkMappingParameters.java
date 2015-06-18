@@ -79,6 +79,7 @@ public class DatabaseNetworkMappingParameters {
 		this.target = target;
 		this.interaction = interaction;
 		this.defInteraction = defInteraction;
+		this.nodeJoinColumnName = nodeJoinColumnName;
 		this.isMutable = isMutable;
 		this.isDirected = isDirected;
 	}

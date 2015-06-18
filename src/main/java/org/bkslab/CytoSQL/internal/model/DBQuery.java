@@ -130,7 +130,7 @@ public class DBQuery {
 		try {
 			PreparedStatement insertStmt;
 			insertStmt = conn.prepareStatement(
-				"INSERT INTO TABLE " + tableName +" ( " + keyColumnName + " ) VALUES ( ? );");
+				"INSERT INTO " + tableName +" ( " + keyColumnName + " ) VALUES ( ? );");
 			for(CyNode node : nodes){
 				insertStmt.setString(1, network.getRow(node).get(keyColumnName, String.class));
 				insertStmt.executeUpdate();
