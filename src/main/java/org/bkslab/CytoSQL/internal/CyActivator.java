@@ -1,5 +1,6 @@
 package org.bkslab.CytoSQL.internal;
 
+import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParametersHandlerFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkExtenderFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkTableReaderFactory;
 import org.osgi.framework.BundleContext;
@@ -17,6 +18,7 @@ import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.work.TaskFactory;
+import org.cytoscape.work.swing.GUITunableHandlerFactory;
 
 import java.util.Properties;
 
@@ -56,6 +58,9 @@ public class CyActivator extends AbstractCyActivator {
 		databaseNetworkExtenderFactoryProps.setProperty(COMMAND_NAMESPACE, "CytoSQL");
 		registerService(context,setNetworkBackgroundColorTaskFactory,NetworkViewTaskFactory.class, databaseNetworkExtenderFactoryProps);
 		
+		DatabaseNetworkMappingParametersHandlerFactory databaseNetworkMappingParametersHandlerFactory =
+				new DatabaseNetworkMappingParametersHandlerFactory();
+		registerService(context,databaseNetworkMappingParametersHandlerFactory,GUITunableHandlerFactory.class, new Properties());
 	}
 }
 

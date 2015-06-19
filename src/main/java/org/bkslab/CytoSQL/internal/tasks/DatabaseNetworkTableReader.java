@@ -27,7 +27,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	@Tunable(description = "Name of new network:")
 	public String name;
 	
-	@ContainsTunables
+	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
 
 	
