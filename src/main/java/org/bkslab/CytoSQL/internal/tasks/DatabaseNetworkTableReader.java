@@ -20,13 +20,6 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	@ContainsTunables
 	public DBConnectionInfo dbConnectionInfo;
 	
-	// SQL query
-	@Tunable(description="SQL Query")
-	public String sqlQuery;
-
-	@Tunable(description = "Name of new network:")
-	public String name;
-	
 	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
 
@@ -61,7 +54,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	
 
 	public void run(final TaskMonitor taskMonitor) {
-		final String suggestedName = cyNetworkNaming.getSuggestedNetworkTitle(this.name);
+		final String suggestedName = cyNetworkNaming.getSuggestedNetworkTitle(dnmp.newNetworkName);
 		taskMonitor.setTitle("Creating network '" + suggestedName + "' from SQL query.");
 		taskMonitor.setProgress(0.0);
 		
@@ -73,7 +66,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		parser = new DatabaseNetworkParser(dbConnectionInfo, dnmp);
 
 		try {
-			parser.parse(taskMonitor, network, sqlQuery);
+			parser.parse(taskMonitor, network, dnmp.sqlQuery);
 		} catch(Exception e){
 			System.out.println("Failed to parse SQL query into network:\n" + e.getMessage());
 			network.dispose();

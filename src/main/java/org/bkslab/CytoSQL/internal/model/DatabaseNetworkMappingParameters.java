@@ -7,10 +7,7 @@ import java.util.Map;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.work.Tunable;
 
-public class DatabaseNetworkMappingParameters {
-// would like to derive from AbstractMappingParameters, but it isn't exposed through the API
-
-	// copied from AbtractMappingParameters
+public class DatabaseNetworkMappingParameters {	
 	
 	// what is this ID used for?
 	//public static final String ID = "name";
@@ -30,28 +27,30 @@ public class DatabaseNetworkMappingParameters {
 //	@Tunable
 //	public Map<String, String> networkTitle2ID = null;
 
-	@Tunable(description="Node Join Column", groups="Network Mapping")
+	public String sqlQuery;
+	
+	public String newNetworkName;
+	
+	//@Tunable(description="Node Join Column", groups="Network Mapping")
 	public String nodeJoinColumnName;
 	
-
-	
 	// these are the columns in the returned SQL ResultSet
-	@Tunable(description="Source column", groups="Network Mapping")
+	//@Tunable(description="Source column", groups="Network Mapping")
 	public int source;
 	
-	@Tunable(description="Target column", groups="Network Mapping")
+	//@Tunable(description="Target column", groups="Network Mapping")
 	public int target;
 	
-	@Tunable(description="Interaction column", groups="Network Mapping")
+	//@Tunable(description="Interaction column", groups="Network Mapping")
 	public int interaction;
 	
-	@Tunable(description="Default interaction", groups="Network Mapping")
+	//@Tunable(description="Default interaction", groups="Network Mapping")
 	public String defInteraction;
 		
-	@Tunable(description="Is the added network mutable?", groups="Network Mapping")
+	//@Tunable(description="Is the added network mutable?", groups="Network Mapping")
 	public boolean isMutable;
 	
-	@Tunable(description="Is the network directed?", groups="Network Mapping")
+	//@Tunable(description="Is the network directed?", groups="Network Mapping")
 	public boolean isDirected;
 	
 	public DatabaseNetworkMappingParameters() {}
@@ -59,6 +58,8 @@ public class DatabaseNetworkMappingParameters {
 	public DatabaseNetworkMappingParameters(
 //			final String listDelimiter,
 //			final Class<?>[] listAttributeTypes,
+			final String sqlQuery,
+			final String newNetworkName,
 			final int source,
 			final int target,
 			final int interaction,
@@ -74,7 +75,8 @@ public class DatabaseNetworkMappingParameters {
 //		} else {
 //			this.listDelimiter = listDelimiter;
 //		}
-				
+		this.sqlQuery = sqlQuery;
+		this.newNetworkName = newNetworkName;
 		this.source = source;
 		this.target = target;
 		this.interaction = interaction;
@@ -98,6 +100,10 @@ public class DatabaseNetworkMappingParameters {
 //		return this.listAttributeTypes[i];
 //	}
 	
+	public String getSQLQuery() {
+		return sqlQuery;
+	}
+		
 	public int getSourceIndex() {
 		return source;
 	}
@@ -168,5 +174,10 @@ public class DatabaseNetworkMappingParameters {
 //		}
 		
 	}
+	
+	public void saveIntoNetwork(CyNetwork network) {
+		
+	}
+	
 	
 }

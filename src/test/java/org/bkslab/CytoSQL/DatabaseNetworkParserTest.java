@@ -26,7 +26,7 @@ public class DatabaseNetworkParserTest {
 		DBConnectionInfo connInfo = new DBConnectionInfo(
 			"org.sqlite.JDBC", url, "", "", "", "");
 		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(
-			1, 2, -1, "pp", "", true, false);
+			sqlQuery, "", 1, 2, -1, "pp", "", true, false);
 		DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
 		CyNetwork network = support.getNetwork();
 		TaskMonitor taskMonitor = mock(TaskMonitor.class);
@@ -54,14 +54,13 @@ public class DatabaseNetworkParserTest {
 		
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		
-		
+		final String sqlQuery = "SELECT network.source, network.target FROM selected_nodes LEFT JOIN network ON selected_nodes.name = network.source;";		
 		DBConnectionInfo connInfo = new DBConnectionInfo("org.sqlite.JDBC", url, "", "", "", "");
-		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(1, 2, -1, "pp", "name", true, false);
+		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
 		
 		try {
 			DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
 			parser.addSelectedNodes(network);
-			final String sqlQuery = "SELECT network.source, network.target FROM selected_nodes LEFT JOIN network ON selected_nodes.name = network.source;";
 			parser.parse(taskMonitor, network, sqlQuery);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
