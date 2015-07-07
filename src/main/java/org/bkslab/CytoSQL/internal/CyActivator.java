@@ -1,6 +1,7 @@
 package org.bkslab.CytoSQL.internal;
 
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParametersHandlerFactory;
+import org.bkslab.CytoSQL.internal.tasks.DatabaseConnectionInfoTaskFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkExtenderFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkTableReaderFactory;
 import org.osgi.framework.BundleContext;
@@ -14,6 +15,8 @@ import static org.cytoscape.work.ServiceProperties.TITLE;
 
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.task.NetworkViewTaskFactory;
@@ -34,12 +37,30 @@ public class CyActivator extends AbstractCyActivator {
 		CyNetworkManager cyNetworkManagerServiceRef = getService(context,CyNetworkManager.class);
 		CyNetworkFactory cyNetworkFactoryServiceRef = getService(context,CyNetworkFactory.class);
 		CyNetworkNaming cyNetworkNamingServiceRef = getService(context,CyNetworkNaming.class);
-
+		CyTableFactory cyTableFactoryServiceRef = getService(context, CyTableFactory.class);
+		CyTableManager cyTableManagerServiceRef = getService(context, CyTableManager.class);
+		
+		DatabaseConnectionInfoTaskFactory databaseConnectionInfoTaskFactory = new DatabaseConnectionInfoTaskFactory(
+			cyTableFactoryServiceRef,
+			cyTableManagerServiceRef);
+		
+		Properties databaseConnectionInfoTaskFactoryProps = new Properties();		
+		databaseConnectionInfoTaskFactoryProps.setProperty(TITLE, "Set Database Connection Info...");
+		databaseConnectionInfoTaskFactoryProps.setProperty(PREFERRED_MENU, "Apps.CytoSQL");
+		databaseConnectionInfoTaskFactoryProps.setProperty(IN_MENU_BAR, "false");
+		databaseConnectionInfoTaskFactoryProps.setProperty(MENU_GRAVITY, "1.0");
+		databaseConnectionInfoTaskFactoryProps.setProperty(COMMAND, "SetDatabaseConnectionInfo");
+		databaseConnectionInfoTaskFactoryProps.setProperty(COMMAND_NAMESPACE, "CytoSQL");
+		registerService(context,databaseConnectionInfoTaskFactory,TaskFactory.class, databaseConnectionInfoTaskFactoryProps);
+		
+		
 		DatabaseNetworkTableReaderFactory databaseNetworkTableReaderFactory = new DatabaseNetworkTableReaderFactory(
-			cyNetworkManagerServiceRef,
-			cyNetworkFactoryServiceRef,
-			cyNetworkNamingServiceRef);
-			
+				cyTableFactoryServiceRef,
+				cyTableManagerServiceRef,
+				cyNetworkManagerServiceRef,
+				cyNetworkFactoryServiceRef,
+				cyNetworkNamingServiceRef);
+		
 		Properties databaseNetworkTableReaderFactoryProps = new Properties();		
 		databaseNetworkTableReaderFactoryProps.setProperty(TITLE, "Create Network From Database Query");
 		databaseNetworkTableReaderFactoryProps.setProperty(PREFERRED_MENU, "Apps.CytoSQL");

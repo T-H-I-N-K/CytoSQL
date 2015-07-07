@@ -36,7 +36,7 @@ public class DBQueryTest {
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		
 		try {
-			DBQuery dbQuery = new DBQuery(new DBConnectionInfo("org.sqlite.JDBC", url, "", "", "", ""));
+			DBQuery dbQuery = new DBQuery(new DBConnectionInfo("default", "org.sqlite.JDBC", url, "", "", "", ""));
 			ResultSet resultSet = dbQuery.getResults("SELECT * FROM network;");
 			assertEquals(resultSet.next(), true);
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();

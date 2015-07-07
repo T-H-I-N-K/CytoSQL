@@ -19,7 +19,7 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 	@ContainsTunables
 	public DBConnectionInfo dbConnectionInfo;
 		
-	@ContainsTunables
+	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
 
 	

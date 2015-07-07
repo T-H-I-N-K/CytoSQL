@@ -1,10 +1,15 @@
 package org.bkslab.CytoSQL.internal.tasks;
 
+import java.util.Map;
+
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+import org.bkslab.CytoSQL.internal.model.PropertiesSaver;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ContainsTunables;
@@ -15,9 +20,9 @@ import org.cytoscape.work.Tunable;
 
 public class DatabaseNetworkTableReader extends AbstractTask {
 	
-
+	PropertiesSaver propertiesSaver;
+	
 	// Database parameters
-	@ContainsTunables
 	public DBConnectionInfo dbConnectionInfo;
 	
 	@Tunable
@@ -38,6 +43,8 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	}
 	
 	public DatabaseNetworkTableReader(
+		final CyTableFactory cyTableFactory,
+		final CyTableManager cyTableManager,
 		final CyNetworkManager cyNetworkManager,
 		final CyNetworkFactory cyNetworkFactory,
 		final CyNetworkNaming cyNetworkNaming) {
@@ -47,7 +54,19 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		this.cyNetworkNaming = cyNetworkNaming;
 
 		// initialized with a Tunables
-		dbConnectionInfo = new DBConnectionInfo();
+		
+		propertiesSaver = new PropertiesSaver(cyTableFactory, cyTableManager);
+		Map<String, Object>  dbConnectionInfoProperties = propertiesSaver.getProperties(
+				DBConnectionInfo.SAVER_TABLE,
+				DBConnectionInfo.SAVER_TABLE_DEFAULT_KEY);
+		
+		if(dbConnectionInfoProperties == null){
+			System.out.println("Database Connection Info could not be found.");
+			dbConnectionInfo = new DBConnectionInfo();
+		} else {
+			dbConnectionInfo = new DBConnectionInfo(dbConnectionInfoProperties);
+		}
+		
 		dnmp = new DatabaseNetworkMappingParameters();
 
 	}

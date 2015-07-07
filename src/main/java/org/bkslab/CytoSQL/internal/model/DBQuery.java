@@ -86,10 +86,10 @@ public class DBQuery {
 	}
 
 	private String getSchema(){
-		if(dbConnectionInfo.postgres_schema.length() == 0){
+		if(dbConnectionInfo.schema.length() == 0){
 			return null;
 		} else {
-			return dbConnectionInfo.postgres_schema.toUpperCase();
+			return dbConnectionInfo.schema.toUpperCase();
 		}
 	}
 	

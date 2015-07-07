@@ -24,7 +24,7 @@ public class DatabaseNetworkParserTest {
 		
 		
 		DBConnectionInfo connInfo = new DBConnectionInfo(
-			"org.sqlite.JDBC", url, "", "", "", "");
+			"default", "org.sqlite.JDBC", url, "", "", "", "");
 		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(
 			sqlQuery, "", 1, 2, -1, "pp", "", true, false);
 		DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
@@ -55,7 +55,7 @@ public class DatabaseNetworkParserTest {
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		
 		final String sqlQuery = "SELECT network.source, network.target FROM selected_nodes LEFT JOIN network ON selected_nodes.name = network.source;";		
-		DBConnectionInfo connInfo = new DBConnectionInfo("org.sqlite.JDBC", url, "", "", "", "");
+		DBConnectionInfo connInfo = new DBConnectionInfo("default", "org.sqlite.JDBC", url, "", "", "", "");
 		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
 		
 		try {

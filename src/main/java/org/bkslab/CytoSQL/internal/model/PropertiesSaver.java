@@ -1,6 +1,7 @@
 package org.bkslab.CytoSQL.internal.model;
 
 import java.util.Map;
+
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
@@ -24,7 +25,7 @@ public class PropertiesSaver {
 	public void saveProperties(
 		final String tableTitle,
 		final String primaryKey,
-		Map<String, Object> properties) {
+		Map<String, Object> properties) throws Exception {
 		
 		CyTable table = getTable(tableTitle);
 		if(table == null){
@@ -63,7 +64,11 @@ public class PropertiesSaver {
 	private CyTable createTable(
 		final String tableTitle,
 		final String primaryKey,
-		final Map<String, Object> properties){
+		final Map<String, Object> properties) throws Exception{
+		
+		if(!properties.containsKey(primaryKey)){
+			throw new Exception("Cannot create PropertiesSaver table " + tableTitle + " because the properties doesn't have an entry corresponding to the primary key: '" + primaryKey + "'.");
+		}
 		
 		CyTable table = tableFactory.createTable(
 			tableTitle, primaryKey, properties.get(primaryKey).getClass(), false, true);
@@ -102,7 +107,8 @@ public class PropertiesSaver {
 	private Map<String, Object> getFromTable(CyTable table, Object primaryKeyValue){
 		final String primaryKey = table.getPrimaryKey().getName();
 		for(CyRow row : table.getAllRows()){
-			if(primaryKeyValue == row.getRaw(primaryKey)){
+			Object value = row.getRaw(primaryKey);
+			if(primaryKeyValue.equals(value)){
 				return row.getAllValues();
 			}
 		}

@@ -48,6 +48,457 @@ import org.cytoscape.work.swing.AbstractGUITunableHandler;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 
+
+
+
+
+
+
+
+// old
+import java.awt.Component;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import javax.swing.GroupLayout;
+
+import static javax.swing.GroupLayout.DEFAULT_SIZE;
+import static javax.swing.GroupLayout.PREFERRED_SIZE;
+
+import javax.swing.BorderFactory;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+
+import org.cytoscape.work.Tunable;
+import org.cytoscape.work.swing.AbstractGUITunableHandler;
+import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+
+// old
+
+public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableHandler {
+
+	private JPanel controlPanel;
+	private JLabel label;
+	
+	private JLabel sqlTextLabel;
+	private JCheckBox autoCompletion;
+	private SQLTextArea sqlText;
+	private JComboBox<String> favorites;
+	private JComboBox<String> history;
+	private JSeparator separator1;
+	private JComboBox<String> operation;
+	private JLabel previewLabel;
+	private JTable previewResult;
+	private JScrollPane previewPane;
+	
+	// PopUps
+	private JWindow tablePopUpWindow;
+	private JList<String> tablePopUpList;
+	private DefaultListModel<String> tablePopUpListModel;
+	private JScrollPane tablePopUpScrollPane;
+	
+	private JWindow columnPopUpWindow;
+	private JList<String> columnPopUpList;
+	private DefaultListModel<String> columnPopUpListModel;	
+	private JScrollPane columnPopUpScrollPane;
+	private Thread popUpThread=null;
+	
+	// for getting help with building the query
+	// make sure that it is initialized before calling this handler
+	private DBQuery dbQuery;
+	
+	private boolean dotPressed = false;
+	
+	
+	
+	
+//	private JPanel controlPanel;
+//	private JLabel label;
+//	private JTextField sqlText;
+	
+	private int counter;
+	
+	public DatabaseNetworkMappingParametersHandler(
+			Field field,
+			Object instance,
+			Tunable tunable) {
+		super(field, instance, tunable);
+		
+		init();
+		counter = 0;
+	}
+	
+	public DatabaseNetworkMappingParametersHandler(
+			final Method getter, final Method setter, final Object instance, final Tunable tunable){
+		super(getter, setter, instance, tunable);
+		
+		init();
+		counter = 0;
+	}
+	
+	private void init() {
+		initializeLayout();
+		
+		updateFieldPanel(panel, label, controlPanel, horizontal);
+
+	}
+
+	/*
+	private void setGUI(){
+		label = new JLabel();
+		label.setText("Database Network Mapping Parameters");
+		
+		sqlText = new JTextField();
+		sqlText.setFont(new java.awt.Font("Monospaced", 0, 11));
+	    sqlText.setBounds(13, 80, 916, 159);
+	    sqlText.setText("");
+		
+		controlPanel = new JPanel();
+		
+		final GroupLayout layout = new GroupLayout(controlPanel);
+		controlPanel.setLayout(layout);
+		layout.setAutoCreateContainerGaps(false);
+		layout.setAutoCreateGaps(true);
+
+		layout.setHorizontalGroup(layout.createSequentialGroup()
+				.addComponent(sqlText, DEFAULT_SIZE, 400, Short.MAX_VALUE)
+		);
+		layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.CENTER, false)
+				.addComponent(sqlText, PREFERRED_SIZE, 800, PREFERRED_SIZE)
+		);
+	}
+	*/
+	
+	
+	private void initializeLayout(){
+		label = new JLabel();
+		label.setText("Database Network Mapping Parameters");
+		
+		sqlTextLabel = new JLabel();
+		sqlTextLabel.setText("Enter SQL query:");
+		
+		autoCompletion = new JCheckBox();
+		autoCompletion.setText("Auto Completion");
+		
+		sqlText = new SQLTextArea();
+		
+	    tablePopUpWindow = new JWindow();
+	    tablePopUpList = new JList<String>();
+	    tablePopUpListModel = new DefaultListModel<String>();
+	    tablePopUpScrollPane = new JScrollPane(tablePopUpList);
+
+	    tablePopUpWindow = new JWindow();	    	    
+	    columnPopUpList = new JList<String>();
+	    columnPopUpListModel = new DefaultListModel<String>();
+	    columnPopUpScrollPane = new JScrollPane(columnPopUpList);
+	    	    
+	    favorites = new JComboBox<String>();
+	    //updateFavorites();
+	    
+	    history = new JComboBox<String>();
+	    //history.setModel(initHistory());
+	    
+	    separator1 = new JSeparator();
+
+	    operation = new JComboBox<String>();
+	    //operation.setModel(initOperation());
+	    
+	    previewLabel = new JLabel();
+	    previewLabel.setText("SQL results preview:");
+	    
+	    previewResult = new JTable();
+	    previewPane = new JScrollPane(previewResult);
+	    
+		controlPanel = new JPanel();
+		
+		final GroupLayout layout = new GroupLayout(controlPanel);
+		controlPanel.setLayout(layout);
+		layout.setAutoCreateContainerGaps(true);
+		layout.setAutoCreateGaps(true);
+		
+//		layout.setHorizontalGroup(layout.createSequentialGroup()
+//				.addComponent(sqlTextLabel, DEFAULT_SIZE, 400, Short.MAX_VALUE)
+//		);
+//		layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.CENTER, false)
+//				.addComponent(sqlTextLabel, PREFERRED_SIZE, 800, PREFERRED_SIZE)
+//		);
+
+		
+		layout.setHorizontalGroup(layout
+			.createParallelGroup(GroupLayout.Alignment.LEADING)
+			.addGroup(
+				layout.createSequentialGroup()
+				.addContainerGap()
+				.addComponent(sqlTextLabel)
+				.addContainerGap(
+					javax.swing.GroupLayout.DEFAULT_SIZE,
+					Short.MAX_VALUE))
+				.addGroup(
+					layout.createSequentialGroup()
+					.addComponent(favorites,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(
+						javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+						208, Short.MAX_VALUE)
+					.addComponent(history,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.PREFERRED_SIZE))
+				.addComponent((JScrollPane) sqlText)
+				.addComponent(previewPane)
+				.addGroup(
+					layout.createSequentialGroup()
+					.addComponent(previewLabel)
+					.addGap(0, 0, Short.MAX_VALUE)));
+		
+		layout.setVerticalGroup(layout
+			.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+			.addGroup(
+				layout.createSequentialGroup()
+				.addContainerGap()
+				.addComponent(sqlTextLabel)
+				.addPreferredGap(
+					javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+				.addComponent(sqlText,
+					javax.swing.GroupLayout.PREFERRED_SIZE,
+					102,
+					javax.swing.GroupLayout.PREFERRED_SIZE)
+				.addPreferredGap(
+					javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+				.addGroup(
+					layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+					.addComponent(favorites,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.PREFERRED_SIZE)
+					.addComponent(history,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.PREFERRED_SIZE))
+				.addPreferredGap(
+					javax.swing.LayoutStyle.ComponentPlacement.RELATED,
+					18, Short.MAX_VALUE)
+				.addComponent(previewLabel)
+				.addPreferredGap(
+					javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+				.addComponent(previewPane,
+					javax.swing.GroupLayout.PREFERRED_SIZE,
+					98,
+					javax.swing.GroupLayout.PREFERRED_SIZE)));
+                
+                
+//                
+//                
+//		layout.setHorizontalGroup(
+//			layout.createSequentialGroup()
+//			.addComponent(sqlTextLabel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent((JScrollPane)sqlText, 100, DEFAULT_SIZE, 1000)
+//			.addGroup(
+//				layout.createParallelGroup(GroupLayout.Alignment.CENTER)
+//				.addComponent(favorites, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//				.addComponent(history, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent(separator1, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(operation, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(previewPane, 100, DEFAULT_SIZE, 1000));
+//
+//
+//		
+//		layout.setVerticalGroup(
+//			layout.createSequentialGroup()
+//			.addGroup(
+//				layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//				.addComponent(sqlTextLabel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent((JScrollPane)sqlText, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addGroup(
+//				layout.createParallelGroup()
+//				.addComponent(favorites, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//				//.addPreferredGap(ComponentPlacement.RELATED)
+//				.addComponent(history, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent(separator1, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(operation, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(previewPane, 100, DEFAULT_SIZE, 1000));
+			
+
+		
+//		layout.setHorizontalGroup(
+//			layout.createSequentialGroup()
+//			.addComponent(sqlTextLabel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent((JScrollPane)sqlText, 100, DEFAULT_SIZE, 1000)
+//			.addGroup(
+//				layout.createParallelGroup(GroupLayout.Alignment.CENTER)
+//				.addComponent(favorites, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//				.addComponent(history, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent(separator1, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(operation, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(previewPane, 100, DEFAULT_SIZE, 1000));
+//		
+//		layout.setVerticalGroup(
+//			layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//			.addGroup(
+//				layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+//				.addComponent(sqlTextLabel, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent((JScrollPane)sqlText, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addGroup(
+//				layout.createSequentialGroup()
+//				.addComponent(favorites, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//				.addPreferredGap(ComponentPlacement.RELATED)
+//				.addComponent(history, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE))
+//			.addComponent(separator1, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+//			.addComponent(previewPane, 100, DEFAULT_SIZE, 1000));
+	}
+	
+	
+	
+	@Override
+	public void update(){
+		sqlText.setText("Counter: " + counter);
+		counter = counter + 1;
+				
+	}
+	
+
+	@Override
+	public void handle() {
+		
+		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters();
+		try {
+			setValue(dnmp);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
+	// copied from org.cytoscape.work.internal.tunables.utils.GUIDefaults because it's not accessible f
+	private static void updateFieldPanel(final JPanel p, final Component label, final Component control,
+			final boolean horizontalForm) {
+//		if (p instanceof TunableFieldPanel) {
+//			((TunableFieldPanel)p).setControl(control);
+//			
+//			if (label instanceof JLabel)
+//				((TunableFieldPanel)p).setLabel((JLabel)label);
+//			else if (label instanceof JTextArea)
+//				((TunableFieldPanel)p).setMultiLineLabel((JTextArea)label);
+//			
+//			return;
+//		}
+		
+		p.removeAll();
+		
+		final GroupLayout layout = new GroupLayout(p);
+		p.setLayout(layout);
+		layout.setAutoCreateContainerGaps(false);
+		layout.setAutoCreateGaps(true);
+		
+		if (horizontalForm) {
+			p.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 2));
+			
+			layout.setHorizontalGroup(layout.createParallelGroup(Alignment.LEADING, true)
+					//.addComponent(label, DEFAULT_SIZE, DEFAULT_SIZE, Short.MAX_VALUE)
+					.addComponent(control, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+			);
+			layout.setVerticalGroup(layout.createSequentialGroup()
+					//.addComponent(label, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+					.addComponent(control, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+			);
+		} else {
+			p.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
+			
+			final Alignment vAlign = control instanceof JPanel || control instanceof JScrollPane ? 
+					Alignment.LEADING : Alignment.CENTER;
+			
+			int w = Math.max(label.getPreferredSize().width, control.getPreferredSize().width);
+			int gap = w - control.getPreferredSize().width; // So the label and control are centered
+			
+			layout.setHorizontalGroup(layout.createSequentialGroup()
+					.addGroup(layout.createParallelGroup(Alignment.TRAILING, true)
+							.addComponent(label, w, w, Short.MAX_VALUE)
+					)
+					.addGroup(layout.createParallelGroup(Alignment.LEADING, true)
+							.addGroup(layout.createSequentialGroup()
+									.addComponent(control, PREFERRED_SIZE, DEFAULT_SIZE, PREFERRED_SIZE)
+									.addGap(gap, gap, Short.MAX_VALUE)
+							)
+					)
+			);
+			layout.setVerticalGroup(layout.createParallelGroup(vAlign, false)
+					.addComponent(label)
+					.addComponent(control)
+			);
+		}
+	}
+
+}
+
+
+/*
+
+
+package org.bkslab.CytoSQL.internal.model;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Vector;
+
+import javax.swing.GroupLayout;
+
+import static javax.swing.GroupLayout.DEFAULT_SIZE;
+import static javax.swing.GroupLayout.PREFERRED_SIZE;
+
+import javax.swing.BorderFactory;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.ComboBoxModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+import javax.swing.JTable;
+import javax.swing.JWindow;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.ListSelectionModel;
+
+import org.cytoscape.work.Tunable;
+import org.cytoscape.work.swing.AbstractGUITunableHandler;
+import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+import org.bkslab.CytoSQL.internal.model.DBQuery;
+
+
+
+
+
+
+
+
+
 public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableHandler {
 
 	private JPanel controlPanel;
@@ -641,3 +1092,5 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 	}
 
 }
+
+*/
