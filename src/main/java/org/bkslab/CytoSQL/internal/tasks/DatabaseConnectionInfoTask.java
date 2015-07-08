@@ -3,6 +3,7 @@ package org.bkslab.CytoSQL.internal.tasks;
 import java.util.Map;
 
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.PropertiesSaver;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
@@ -14,7 +15,7 @@ import org.cytoscape.work.TaskMonitor;
 
 public class DatabaseConnectionInfoTask extends AbstractTask {
 
-	PropertiesSaver propertiesSaver;
+	DBConnectionManager dbConnectionManager;
 	
 	
 	// Database parameters
@@ -28,32 +29,15 @@ public class DatabaseConnectionInfoTask extends AbstractTask {
 	
 	
 	public DatabaseConnectionInfoTask(
-		CyTableFactory cyTableFactory,
-		CyTableManager cyTableManager
-			){
-		propertiesSaver = new PropertiesSaver(cyTableFactory, cyTableManager);
-		Map<String, Object>  dbConnectionInfoProperties = propertiesSaver.getProperties(
-				DBConnectionInfo.SAVER_TABLE,
-				DBConnectionInfo.SAVER_TABLE_DEFAULT_KEY);
-		
-		if(dbConnectionInfoProperties == null){
-			dbConnectionInfo = new DBConnectionInfo();
-		} else {
-			dbConnectionInfo = new DBConnectionInfo(dbConnectionInfoProperties);
-		}
-		
+		final DBConnectionManager dbConnectionManager
+		){
+		this.dbConnectionManager = dbConnectionManager;
+		dbConnectionInfo = dbConnectionManager.getDBConnectionInfo();		
 	}
 	
 	
 	public void run(final TaskMonitor taskMonitor) {
 		taskMonitor.setTitle("Saving CytoSQL Database Connection Info");
-		try{
-			propertiesSaver.saveProperties(
-				DBConnectionInfo.SAVER_TABLE,
-				DBConnectionInfo.SAVER_TABLE_KEY_COLUMN,
-				dbConnectionInfo.getProperties());
-		} catch(Exception e) {
-			System.out.println("Unable to save the database connection info into the cytoscape file.\n" + e.getMessage());
-		}
+		dbConnectionManager.saveDBConnectionInfo(dbConnectionInfo);
 	}
 }

@@ -1,5 +1,6 @@
 package org.bkslab.CytoSQL.internal.tasks;
 
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.work.AbstractTaskFactory;
@@ -7,21 +8,17 @@ import org.cytoscape.work.TaskIterator;
 
 public class DatabaseConnectionInfoTaskFactory extends AbstractTaskFactory {
 
-	CyTableFactory cyTableFactory;
-	CyTableManager cyTableManager;
-	
+	DBConnectionManager dbConnectionManager;
 	
 	public DatabaseConnectionInfoTaskFactory(
-		CyTableFactory cyTableFactory,
-		CyTableManager cyTableManager){
-		this.cyTableFactory = cyTableFactory;
-		this.cyTableManager = cyTableManager;
+		final DBConnectionManager dbConnectionManager){
+		this.dbConnectionManager = dbConnectionManager; 
 	}
 	
 	@Override
 	public TaskIterator createTaskIterator() {
 		return new TaskIterator(
-			new DatabaseConnectionInfoTask(cyTableFactory, cyTableManager));
+			new DatabaseConnectionInfoTask(dbConnectionManager));
 
 	}
 

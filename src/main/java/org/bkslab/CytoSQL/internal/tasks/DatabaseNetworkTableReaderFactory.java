@@ -2,6 +2,7 @@ package org.bkslab.CytoSQL.internal.tasks;
 
 
 
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
@@ -16,21 +17,18 @@ import org.cytoscape.work.TaskIterator;
 public class DatabaseNetworkTableReaderFactory extends AbstractTaskFactory {
 
 
-	private final CyTableFactory cyTableFactory;
-	private final CyTableManager cyTableManager;
+	private final DBConnectionManager dbConnectionManager;
 	private final CyNetworkFactory cyNetworkFactory;
 	private final CyNetworkManager cyNetworkManager;
 	private final CyNetworkNaming cyNetworkNaming;
 		
 	public DatabaseNetworkTableReaderFactory(
-			final CyTableFactory cyTableFactory,
-			final CyTableManager cyTableManager,
+			final DBConnectionManager dbConnectionManager,
 			final CyNetworkManager cyNetworkManager,
 			final CyNetworkFactory cyNetworkFactory,
 			final CyNetworkNaming cyNetworkNaming
 		) {
-		this.cyTableFactory = cyTableFactory;
-		this.cyTableManager = cyTableManager;
+		this.dbConnectionManager = dbConnectionManager;
 		this.cyNetworkFactory = cyNetworkFactory;
 		this.cyNetworkManager = cyNetworkManager;
 		this.cyNetworkNaming = cyNetworkNaming;
@@ -39,7 +37,7 @@ public class DatabaseNetworkTableReaderFactory extends AbstractTaskFactory {
 	@Override
 	public TaskIterator createTaskIterator() {
 		return new TaskIterator(new DatabaseNetworkTableReader(
-				cyTableFactory, cyTableManager, cyNetworkManager, cyNetworkFactory, cyNetworkNaming));
+				dbConnectionManager, cyNetworkManager, cyNetworkFactory, cyNetworkNaming));
 	}
 }
 

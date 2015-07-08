@@ -1,5 +1,6 @@
 package org.bkslab.CytoSQL.internal;
 
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParametersHandlerFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseConnectionInfoTaskFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkExtenderFactory;
@@ -40,9 +41,12 @@ public class CyActivator extends AbstractCyActivator {
 		CyTableFactory cyTableFactoryServiceRef = getService(context, CyTableFactory.class);
 		CyTableManager cyTableManagerServiceRef = getService(context, CyTableManager.class);
 		
-		DatabaseConnectionInfoTaskFactory databaseConnectionInfoTaskFactory = new DatabaseConnectionInfoTaskFactory(
+		DBConnectionManager dbConnectionManager = new DBConnectionManager(
 			cyTableFactoryServiceRef,
 			cyTableManagerServiceRef);
+
+		DatabaseConnectionInfoTaskFactory databaseConnectionInfoTaskFactory = new DatabaseConnectionInfoTaskFactory(
+			dbConnectionManager);
 		
 		Properties databaseConnectionInfoTaskFactoryProps = new Properties();		
 		databaseConnectionInfoTaskFactoryProps.setProperty(TITLE, "Set Database Connection Info...");
@@ -55,11 +59,10 @@ public class CyActivator extends AbstractCyActivator {
 		
 		
 		DatabaseNetworkTableReaderFactory databaseNetworkTableReaderFactory = new DatabaseNetworkTableReaderFactory(
-				cyTableFactoryServiceRef,
-				cyTableManagerServiceRef,
-				cyNetworkManagerServiceRef,
-				cyNetworkFactoryServiceRef,
-				cyNetworkNamingServiceRef);
+			dbConnectionManager,
+			cyNetworkManagerServiceRef,
+			cyNetworkFactoryServiceRef,
+			cyNetworkNamingServiceRef);
 		
 		Properties databaseNetworkTableReaderFactoryProps = new Properties();		
 		databaseNetworkTableReaderFactoryProps.setProperty(TITLE, "Create Network From Database Query");
@@ -80,7 +83,8 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(context,setNetworkBackgroundColorTaskFactory,NetworkViewTaskFactory.class, databaseNetworkExtenderFactoryProps);
 		
 		DatabaseNetworkMappingParametersHandlerFactory databaseNetworkMappingParametersHandlerFactory =
-				new DatabaseNetworkMappingParametersHandlerFactory();
+			new DatabaseNetworkMappingParametersHandlerFactory(
+				dbConnectionManager);
 		registerService(context,databaseNetworkMappingParametersHandlerFactory,GUITunableHandlerFactory.class, new Properties());
 	}
 }

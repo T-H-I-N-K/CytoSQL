@@ -11,18 +11,27 @@ import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParametersHandler
 
 public class DatabaseNetworkMappingParametersHandlerFactory implements GUITunableHandlerFactory<DatabaseNetworkMappingParametersHandler> {
 
-	public DatabaseNetworkMappingParametersHandlerFactory(){}
+	private final DBConnectionManager dbConnectionManager; 
+	
+	public DatabaseNetworkMappingParametersHandlerFactory(
+		final DBConnectionManager dbConnectionManager	
+		){
+		this.dbConnectionManager = dbConnectionManager;
+		
+	}
 	
 	
 	@Override
-	public DatabaseNetworkMappingParametersHandler createTunableHandler(Field field,
-			Object instance, Tunable tunable) {
+	public DatabaseNetworkMappingParametersHandler createTunableHandler(
+			Field field,
+			Object instance,
+			Tunable tunable) {
 		
 		if(!DatabaseNetworkMappingParameters.class.isAssignableFrom(field.getType())){
 			return null;
 		}
 
-		return new DatabaseNetworkMappingParametersHandler(field, instance, tunable);
+		return new DatabaseNetworkMappingParametersHandler(field, instance, tunable, dbConnectionManager);
 	}
 
 

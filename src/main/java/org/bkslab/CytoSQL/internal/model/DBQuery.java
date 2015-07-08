@@ -32,6 +32,7 @@ public class DBQuery {
 	private ResultSet rs;
 	private DBConnectionInfo dbConnectionInfo;
 	
+	
 	public DBQuery(final DBConnectionInfo dbConnectionInfo) throws SQLException{
 		makeConnection(
 			dbConnectionInfo.driver,
