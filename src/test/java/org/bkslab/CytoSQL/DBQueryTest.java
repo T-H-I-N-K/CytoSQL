@@ -5,36 +5,99 @@ import static org.junit.Assert.*;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
+import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+import org.bkslab.CytoSQL.DatabaseHelper;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DBQueryTest {
 
+	
 	@Before
 	public void setUp() {
 		//initialize SQLite Driver
 		try {
 			Class.forName("org.sqlite.JDBC").newInstance();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
+			System.err.println("Failed to instantiate the SQLite JDBC driver.");
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
+			System.err.println("Failed to access the SQLite JDBC driver.");
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			System.err.println("Failed to locate the SQLite JDBC driver.");			
+			e.printStackTrace();
+		} 
+		
+		//initialize PostreSQL Driver
+		try {
+			Class.forName("org.postgresql.Driver").newInstance();
+		} catch (InstantiationException e) {
+			System.err.println("Failed to instantiate the postgres JDBC driver.");
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			System.err.println("Failed to access the postgres JDBC driver.");
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			System.err.println("Failed to locate the postgres JDBC driver.");
+			String classpath = System.getProperty("java.class.path");
+			System.err.println("Class path: \n" + classpath);
 			e.printStackTrace();
 		} 
 	}
-	 
-	 
-	@Test
-	public void TestDBQueryGetResults() {
 
-		final String url = DatabaseHelper.CreateSimpleNetwork();
+	//@Test
+	public void TestPostgresGetSchemas() {
+		DBConnectionInfo postgresInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");
 		
+		try {
+			DBQuery dbQuery = new DBQuery(postgresInfo);
+			for(String schema : dbQuery.getSchemas()){
+				System.out.println("Schema: " + schema);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			fail();
+		}
+
+	}
+	 
+	//@Test
+	public void TestPostgresDBQueryGetResults() {
+		DBConnectionInfo postgresInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");
+		
+		try {
+			DBQuery dbQuery = new DBQuery(postgresInfo);
+			ResultSet resultSet = dbQuery.getResults("SELECT * FROM sea_chembl18.scores LIMIT 4;");
+			assertEquals(resultSet.next(), true);
+			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+			assertEquals(resultSetMetaData.getColumnCount(), 5);
+			String source = resultSet.getString(1);
+			assertFalse(resultSet.wasNull());
+			String target = resultSet.getString(2);
+			assertFalse(resultSet.wasNull());
+			//assertEquals(source, "a");
+			//assertEquals(target, "b");
+			assertEquals(resultSet.next(), true);
+			assertEquals(resultSet.next(), true);
+			assertEquals(resultSet.next(), true);
+			assertEquals(resultSet.next(), false);
+			dbQuery.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+
+	
+	@Test
+	public void TestSQLiteDBQueryGetResults() {
+		
+		
+		final String url = DatabaseHelper.CreateSimpleNetwork();		
 		try {
 			DBQuery dbQuery = new DBQuery(new DBConnectionInfo("default", "org.sqlite.JDBC", url, "", "", "", ""));
 			ResultSet resultSet = dbQuery.getResults("SELECT * FROM network;");

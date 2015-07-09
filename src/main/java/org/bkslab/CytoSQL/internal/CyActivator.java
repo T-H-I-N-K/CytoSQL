@@ -21,6 +21,9 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CyNetworkNaming;
 import org.cytoscape.task.NetworkViewTaskFactory;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.swing.GUITunableHandlerFactory;
 
@@ -38,8 +41,12 @@ public class CyActivator extends AbstractCyActivator {
 		CyNetworkManager cyNetworkManagerServiceRef = getService(context,CyNetworkManager.class);
 		CyNetworkFactory cyNetworkFactoryServiceRef = getService(context,CyNetworkFactory.class);
 		CyNetworkNaming cyNetworkNamingServiceRef = getService(context,CyNetworkNaming.class);
+		CyNetworkViewManager cyNetworkViewManagerServiceRef = getService(context, CyNetworkViewManager.class);
+		CyNetworkViewFactory cyNetworkViewFactoryServiceRef = getService(context, CyNetworkViewFactory.class);
 		CyTableFactory cyTableFactoryServiceRef = getService(context, CyTableFactory.class);
 		CyTableManager cyTableManagerServiceRef = getService(context, CyTableManager.class);
+		CyLayoutAlgorithmManager cyLayoutAlgorithmManagerServiceRef = getService(context, CyLayoutAlgorithmManager.class);
+
 		
 		DBConnectionManager dbConnectionManager = new DBConnectionManager(
 			cyTableFactoryServiceRef,
@@ -62,7 +69,10 @@ public class CyActivator extends AbstractCyActivator {
 			dbConnectionManager,
 			cyNetworkManagerServiceRef,
 			cyNetworkFactoryServiceRef,
-			cyNetworkNamingServiceRef);
+			cyNetworkNamingServiceRef,
+			cyNetworkViewManagerServiceRef,
+			cyNetworkViewFactoryServiceRef,
+			cyLayoutAlgorithmManagerServiceRef);
 		
 		Properties databaseNetworkTableReaderFactoryProps = new Properties();		
 		databaseNetworkTableReaderFactoryProps.setProperty(TITLE, "Create Network From Database Query");
@@ -74,7 +84,9 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(context,databaseNetworkTableReaderFactory,TaskFactory.class, databaseNetworkTableReaderFactoryProps);
 		
 		
-		DatabaseNetworkExtenderFactory setNetworkBackgroundColorTaskFactory = new DatabaseNetworkExtenderFactory();
+		DatabaseNetworkExtenderFactory setNetworkBackgroundColorTaskFactory = new DatabaseNetworkExtenderFactory(
+			dbConnectionManager,	
+			cyLayoutAlgorithmManagerServiceRef);
 		Properties databaseNetworkExtenderFactoryProps = new Properties();
 		databaseNetworkExtenderFactoryProps.setProperty(PREFERRED_MENU,"Apps.CytoSQL");
 		databaseNetworkExtenderFactoryProps.setProperty(TITLE,"Extend Network by Query");

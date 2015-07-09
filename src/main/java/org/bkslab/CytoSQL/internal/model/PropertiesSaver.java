@@ -6,6 +6,7 @@ import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.model.SavePolicy;
 
 
 public class PropertiesSaver {
@@ -54,7 +55,7 @@ public class PropertiesSaver {
 	
 	private CyTable getTable(final String tableTitle){
 		for (CyTable globalTable : cyTableManager.getGlobalTables()){
-			if (globalTable.getTitle() == tableTitle){
+			if (globalTable.getTitle().equals(tableTitle)){
 				return globalTable;
 			}
 		}
@@ -70,8 +71,10 @@ public class PropertiesSaver {
 			throw new Exception("Cannot create PropertiesSaver table " + tableTitle + " because the properties doesn't have an entry corresponding to the primary key: '" + primaryKey + "'.");
 		}
 		
+		boolean isPublic = false;
 		CyTable table = tableFactory.createTable(
-			tableTitle, primaryKey, properties.get(primaryKey).getClass(), false, true);
+			tableTitle, primaryKey, properties.get(primaryKey).getClass(), isPublic, true);
+		table.setSavePolicy(SavePolicy.SESSION_FILE);
 		
 		for(Map.Entry<String, Object> entry : properties.entrySet()){
 			if(entry.getKey() == primaryKey) continue;

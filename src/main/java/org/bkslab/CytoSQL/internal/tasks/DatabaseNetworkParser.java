@@ -204,7 +204,7 @@ public class DatabaseNetworkParser {
 		}
 	}
 	
-	private Class<?> SQLTypeToCytoscapeType(int sqlType) throws SQLException{
+	public static Class<?> SQLTypeToCytoscapeType(int sqlType) throws SQLException{
 		switch(sqlType){
 		case Types.INTEGER:
 			return Integer.class;
@@ -218,6 +218,17 @@ public class DatabaseNetworkParser {
 			return String.class;
 		default:
 			throw new SQLException("Unrecognized column type '" + sqlType +"'.");
+		}
+	}
+	
+	public static int CytoscapeTypeToSQLType(Class<?> cytoscapeType) throws Exception{
+		if(cytoscapeType == Integer.class){ return Types.INTEGER; }
+		else if(cytoscapeType == Long.class){ return Types.BIGINT; }
+		else if(cytoscapeType == Double.class){ return Types.DOUBLE; }
+		else if(cytoscapeType == String.class){ return Types.VARCHAR; }
+		else if(cytoscapeType == Boolean.class){ return Types.BOOLEAN; }
+		else {
+			throw new Exception("Unrecognized column type: '" + cytoscapeType.getSimpleName() + "'.");
 		}
 	}
 	
@@ -254,7 +265,12 @@ public class DatabaseNetworkParser {
 	
 	public void addSelectedNodes(CyNetwork network){
 		List<CyNode> selected_nodes = CyTableUtil.getNodesInState(network, "selected", true);
-		dbQuery.copyToTempTable(network, selected_nodes, "selected_nodes", this.dnmp.nodeJoinColumnName);
+		try {
+			dbQuery.copyToTempTable(network, selected_nodes, "selected_nodes");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void cleanSelectedNodes(){

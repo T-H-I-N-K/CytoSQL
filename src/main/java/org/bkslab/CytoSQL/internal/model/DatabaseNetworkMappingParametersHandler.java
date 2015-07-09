@@ -58,6 +58,7 @@ import org.bkslab.CytoSQL.internal.model.DBQuery;
 
 
 
+
 // old
 import java.awt.Component;
 import java.lang.reflect.Field;
@@ -278,12 +279,12 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 				try {
 					dotPressed = false;
 					if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown() && !tablePopUpWindow.isVisible()) {
-						popUpShow(tablePopUpWindow, tablePopUpList);
+						//popUpShow(tablePopUpWindow, tablePopUpList);
 						e.consume();
 					} else if (tablePopUpWindow.isVisible()) {
 						popUpKeyPressed(tablePopUpWindow, tablePopUpList, e);
-					} else if (e.getKeyChar() == KeyEvent.VK_DECIMAL && !columnPopUpWindow.isVisible()) {
-						columnPopupShow(e);
+					} else if (e.getKeyChar() == '.' && !columnPopUpWindow.isVisible()) {
+						//columnPopupShow(e);
 						e.consume();
 					} else if (columnPopUpWindow.isVisible()) {
 						popUpKeyPressed(columnPopUpWindow, columnPopUpList, e);
@@ -626,6 +627,19 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 		} catch (SQLException e) {
 			previewResultClear();
 			System.out.println("Database query : \n" + sqlText.getText() + "\n\n Database error: \n" + e.getMessage());
+			 List<String> tablesList;
+			try {
+				System.out.println("Available tables:");
+				tablesList = getDBQuery().getTables("TABLE");
+				for(String tableName : tablesList){
+					 System.out.println("\t\"" + tableName +"\"");
+				 }
+			} catch (Exception e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+	    		
+			 
 		} catch (Exception e) {
 			System.out.println("Database query : \n" + sqlText.getText() + "\n\n Database error: \n" + e.getMessage());
 			e.printStackTrace();

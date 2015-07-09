@@ -14,11 +14,16 @@ import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import org.apache.commons.dbutils.DbUtils;
+import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkParser;
+import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 
@@ -121,12 +126,46 @@ public class DBQuery {
 	public void copyToTempTable(
 			CyNetwork network,
 			List<CyNode> nodes,
-			final String tableName,
-			final String keyColumnName) {
+			final String tableName) throws Exception {
+		
+		int nCols = 0;
 		try {
+			if(nodes.isEmpty()){
+				return;
+			}
 			Statement createTempTableStmt = conn.createStatement();
-			createTempTableStmt.executeUpdate(
-				"CREATE TEMPORARY TABLE " + tableName + " ( " + keyColumnName + " STRING );");
+			String sql = "CREATE TEMPORARY TABLE " + tableName + " (";
+			for(CyColumn column : network.getDefaultNodeTable().getColumns()){
+				if(column.getName() == "SUID"){ continue;}
+				if(column.getName() == "selected"){ continue;}				
+				if(nCols > 0){ sql += ", "; }
+				
+				
+				Class<?> cytoscapeColClass = column.getType();
+				
+				switch( DatabaseNetworkParser.CytoscapeTypeToSQLType( cytoscapeColClass)){
+				case Types.INTEGER:
+					sql += "\"" + column.getName() + "\" INTEGER";
+					break;
+				case Types.BIGINT:
+					sql += "\"" + column.getName() + "\" BIGINT";
+					break;
+				case Types.DOUBLE:
+					sql += "\"" + column.getName() + "\" DOUBLE";
+					break;
+				case Types.VARCHAR:
+					sql += "\"" + column.getName() + "\" VARCHAR";
+					break;
+				case Types.BOOLEAN:
+					sql += "\"" + column.getName() + "\" BOOLEAN";
+					break;
+				default:
+					throw new Exception("Unrecogized sql type for cytoscape type " + cytoscapeColClass);
+				}
+			}
+			sql += ");";
+			System.out.println("SQL: " + sql);
+			createTempTableStmt.executeUpdate(sql);
 			createTempTableStmt.close();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -135,10 +174,17 @@ public class DBQuery {
 		
 		try {
 			PreparedStatement insertStmt;
-			insertStmt = conn.prepareStatement(
-				"INSERT INTO " + tableName +" ( " + keyColumnName + " ) VALUES ( ? );");
+			insertStmt = getConnection().prepareStatement(
+				"INSERT INTO " + tableName + " VALUES ( " + String.join(", ",  Collections.nCopies(nCols,  "?")) + ");");
 			for(CyNode node : nodes){
-				insertStmt.setString(1, network.getRow(node).get(keyColumnName, String.class));
+				int colIndex = 1;
+				for(Map.Entry<String, Object> column : network.getRow(node).getAllValues().entrySet()){
+					if(column.getKey() == "SUID") { continue; }
+					if(column.getKey() == "selected") { continue; }
+					
+					insertStmt.setObject(colIndex, column.getValue());
+					colIndex++;
+				}
 				insertStmt.executeUpdate();
 			}
 		} catch (SQLException e) {
@@ -151,7 +197,7 @@ public class DBQuery {
 		final String tableName){
 	
 		try {
-			Statement createTempTableStmt = conn.createStatement();
+			Statement createTempTableStmt = getConnection().createStatement();
 			createTempTableStmt.executeUpdate(
 				"DROP TABLE " + tableName + ";");
 			createTempTableStmt.close();

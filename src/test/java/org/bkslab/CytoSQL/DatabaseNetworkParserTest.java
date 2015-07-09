@@ -1,6 +1,10 @@
 package org.bkslab.CytoSQL;
 
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkParser;
 import org.cytoscape.model.CyNetwork;
@@ -42,6 +46,39 @@ public class DatabaseNetworkParserTest {
 		assertEquals(nodeCount, 4);
 		assertEquals(edgeCount, 5);
 	}
+	
+	
+	@Test
+	public void parseExtendPostgresTest() {
+		TaskMonitor taskMonitor = mock(TaskMonitor.class);
+		
+		CyNetwork network = support.getNetwork();
+		CyNode node1 = network.addNode();
+		network.getRow(node1).set(CyNetwork.NAME, "b");
+		network.getRow(node1).set(CyNetwork.SELECTED, true);
+		
+		
+		
+		DBConnectionInfo connInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");		
+		final String sqlQuery = "SELECT name AS source, name AS target FROM selected_nodes;";		
+		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
+		
+		try {
+			DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
+			parser.addSelectedNodes(network);
+			parser.parse(taskMonitor, network, sqlQuery);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		}
+		int nodeCount = network.getNodeCount();
+		int edgeCount = network.getEdgeCount();
+		assertEquals(nodeCount, 1);
+		assertEquals(edgeCount, 1);
+	}
+	
+	
 	
 	@Test
 	public void parseExtendTest(){
