@@ -59,6 +59,9 @@ import org.bkslab.CytoSQL.internal.model.DBQuery;
 
 
 
+
+
+
 // old
 import java.awt.Component;
 import java.lang.reflect.Field;
@@ -84,7 +87,9 @@ import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 
 public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableHandler {
 
-	private DBConnectionManager dbConnectionManager;
+	// for getting help with building the query
+	// make sure that it is initialized before calling this handler
+	private DBQuery dbQuery;
 	
 	private JPanel controlPanel;
 	
@@ -111,10 +116,7 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 	private DefaultListModel<String> columnPopUpListModel;	
 	private JScrollPane columnPopUpScrollPane;
 	private Thread popUpThread=null;
-	
-	// for getting help with building the query
-	// make sure that it is initialized before calling this handler
-	private DBQuery dbQuery;
+
 	
 	private boolean dotPressed = false;
 	
@@ -126,7 +128,12 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			final DBConnectionManager dbConnectionManager
 			) {
 		super(field, instance, tunable);
-		this.dbConnectionManager = dbConnectionManager;
+		try {
+			this.dbQuery = dbConnectionManager.getDBQuery();
+		} catch (Exception e) {
+			System.out.println("Unable to establish connection to database.");
+			e.printStackTrace();
+		}
 		
 		init();
 	}
@@ -137,17 +144,6 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 		System.out.println("Called the DatabaseNetworkMappingParametersHandler constructor with a gitter, setter, instance, and tunable constructor ... how should I iniitalize the DBConnectionManager from here?");
 		
 		init();
-	}
-		
-	private DBQuery getDBQuery() throws Exception{
-		if(dbQuery == null){
-			DBConnectionInfo dbConnectionInfo = dbConnectionManager.getDBConnectionInfo();
-			if(dbConnectionInfo == null){
-				throw new Exception("A database connection has not been established yet.");
-			}
-			dbQuery = new DBQuery(dbConnectionInfo);
-		}
-		return dbQuery;
 	}
 	
 	private void init() {
@@ -461,7 +457,7 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			}
 			private void tablePopUpInitialize() throws Exception{
 				tablePopUpListModel.clear();
-			    List<String> tablesList = getDBQuery().getTables("TABLE");
+			    List<String> tablesList = dbQuery.getTables("TABLE");
 			    		
 			    for(String tableName : tablesList){
 			      tablePopUpListModel.addElement(tableName);
@@ -600,7 +596,7 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 					if (tableName.indexOf(".") > -1){
 						tableName = tableName.substring(tableName.indexOf(".") + 1);
 					}
-					TableModel colsList = getDBQuery().getTableColumns(tableName);
+					TableModel colsList = dbQuery.getTableColumns(tableName);
 					columnPopUpListModel.removeAllElements();
 					for(int i=0;i<colsList.getRowCount();i++) {
 						String colName = colsList.getValueAt(i,0).toString();
@@ -619,10 +615,9 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 
 	
 	private void previewUpdateActionPerformed() {
-		
 		try {
 			ResultSet resultSet;
-			resultSet = getDBQuery().getResults(sqlText.getText());
+			resultSet = dbQuery.getResults(sqlText.getText());
 			PreviewResultUpdate(resultSet);
 		} catch (SQLException e) {
 			previewResultClear();
@@ -630,7 +625,7 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			 List<String> tablesList;
 			try {
 				System.out.println("Available tables:");
-				tablesList = getDBQuery().getTables("TABLE");
+				tablesList = dbQuery.getTables("TABLE");
 				for(String tableName : tablesList){
 					 System.out.println("\t\"" + tableName +"\"");
 				 }

@@ -33,8 +33,7 @@ public class AddSelectedNodesTask extends AbstractNetworkTask {
 		taskMonitor.setProgress(0.0);
 		taskMonitor.setTitle("COpying selected nodes to database.");
 		
-		DBConnectionInfo dbConnectionInfo = dbConnectionManager.getDBConnectionInfo();
-		parser = new DatabaseNetworkParser(dbConnectionInfo, null);
+		parser = new DatabaseNetworkParser(dbConnectionManager, null);
 		
 		if(isCanceled){
 			return;

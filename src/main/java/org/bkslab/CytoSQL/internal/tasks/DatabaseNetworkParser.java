@@ -10,6 +10,7 @@ import java.util.Map;
 import java.io.IOException;
 
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.cytoscape.model.CyEdge;
@@ -26,22 +27,22 @@ public class DatabaseNetworkParser {
 	private Map<Object, CyNode> nMap;
 	
 	// Database parameters
-	private final DBConnectionInfo dbConnectionInfo;
 	private final DatabaseNetworkMappingParameters dnmp;
-	
 	private DBQuery dbQuery;
 	
 	private boolean isCanceled;
 	
 	public DatabaseNetworkParser(
-			DBConnectionInfo dbConnectionInfo,
+			final DBConnectionManager dbConnectionManager,
 			DatabaseNetworkMappingParameters dnmp){
 
-		this.dbConnectionInfo = dbConnectionInfo;
 		this.dnmp = dnmp;
 		try {
-			dbQuery = new DBQuery(dbConnectionInfo);
+			dbQuery = dbConnectionManager.getDBQuery();
 		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -79,8 +80,6 @@ public class DatabaseNetworkParser {
 	
 	
 	private void validateParameters(CyNetwork network, ResultSet resultSet) throws Exception {
-		if (dbConnectionInfo == null)
-			throw new NullPointerException("No database connection specified.");
 
 		if(dnmp == null){
 			throw new NullPointerException("No DatabaseNetworkMappingParameters specified.");

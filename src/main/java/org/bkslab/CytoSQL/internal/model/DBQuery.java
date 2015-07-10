@@ -35,67 +35,24 @@ public class DBQuery {
 	private Connection conn;
 	private Statement st;
 	private ResultSet rs;
-	private DBConnectionInfo dbConnectionInfo;
+	private String schema;
 	
 	
-	public DBQuery(final DBConnectionInfo dbConnectionInfo) throws SQLException{
-		makeConnection(
-			dbConnectionInfo.driver,
-			dbConnectionInfo.url,
-			dbConnectionInfo.database,
-			dbConnectionInfo.user,
-			dbConnectionInfo.password);
-		this.dbConnectionInfo = dbConnectionInfo;
+	public DBQuery(Connection conn, final String schema) throws SQLException{
+		this.conn = conn;
+		this.schema = schema;
 	}
 
 	public void close(){
 		DbUtils.closeQuietly(conn, st, rs);
 	}
 	
-	public Connection getConnection(){
-		return conn;
-	}
-	
-
-	/**
-	 * This method stands in for making the connection with the SQL database.
-	 */
-
-	private void makeConnection(String driver, String url, String dbName,
-			String userName, String password) throws SQLException {
-
-		int idx = driver.indexOf("-CUSTOM_DRIVER"); // database connection
-													// specification provided by
-													// user
-		if (idx >= 0) {
-			driver = driver.substring(0, idx);
-		}
-
-		try {
-			Class.forName(driver).newInstance();
-		} catch (InstantiationException e) {
-			JOptionPane.showMessageDialog(null,
-					"Instantiation exception for connection to DB.\n" + e);
-		} catch (IllegalAccessException e) {
-			JOptionPane.showMessageDialog(null,
-					"Cannot access DB connection.\n" + e);
-		} catch (ClassNotFoundException e) {
-			JOptionPane
-					.showMessageDialog(null, "Driver class not found.\n" + e);
-		}
-		if (idx >= 0) { // CUSTOM USER DEFINED DRIVER
-			conn = DriverManager.getConnection(url, userName, password);
-		} else { // Built-in JDBC driver
-			conn = DriverManager.getConnection(url + "/" + dbName, userName,
-					password);
-		}
-	}
 
 	private String getSchema(){
-		if(dbConnectionInfo.schema.length() == 0){
+		if(schema.length() == 0){
 			return null;
 		} else {
-			return dbConnectionInfo.schema.toUpperCase();
+			return schema.toUpperCase();
 		}
 	}
 	
@@ -139,6 +96,7 @@ public class DBQuery {
 				if(column.getName() == "SUID"){ continue;}
 				if(column.getName() == "selected"){ continue;}				
 				if(nCols > 0){ sql += ", "; }
+				nCols++;
 				
 				
 				Class<?> cytoscapeColClass = column.getType();
@@ -174,7 +132,7 @@ public class DBQuery {
 		
 		try {
 			PreparedStatement insertStmt;
-			insertStmt = getConnection().prepareStatement(
+			insertStmt = conn.prepareStatement(
 				"INSERT INTO " + tableName + " VALUES ( " + String.join(", ",  Collections.nCopies(nCols,  "?")) + ");");
 			for(CyNode node : nodes){
 				int colIndex = 1;
@@ -197,7 +155,7 @@ public class DBQuery {
 		final String tableName){
 	
 		try {
-			Statement createTempTableStmt = getConnection().createStatement();
+			Statement createTempTableStmt = conn.createStatement();
 			createTempTableStmt.executeUpdate(
 				"DROP TABLE " + tableName + ";");
 			createTempTableStmt.close();
@@ -256,7 +214,7 @@ public class DBQuery {
 		ArrayList<String> list = new ArrayList<String>();
 		ResultSet rset = null;
 		try {
-			rset = getConnection().getMetaData().getSchemas();
+			rset = conn.getMetaData().getSchemas();
 			while (rset.next())
 				list.add(rset.getString(1));
 		} catch (Exception ex) {
@@ -288,7 +246,7 @@ public class DBQuery {
 		ArrayList<String> list = new ArrayList<String>();
 		ResultSet rset = null;
 		try {
-			rset = getConnection().getMetaData().getTables(
+			rset = conn.getMetaData().getTables(
 				null, getSchema(), null, new String[] { tableType });
 			while (rset.next())
 				try {
@@ -321,8 +279,7 @@ public class DBQuery {
 		
 		ResultSet rset0 = null;
 		try {
-			rset0 = getConnection().getMetaData().getPrimaryKeys(null,
-					schema, tName.toString());
+			rset0 = conn.getMetaData().getPrimaryKeys(null, schema, tName.toString());
 			while (rset0.next()) {
 				pk.put(rset0.getString(4), rset0.getString(5));
 			}
@@ -353,8 +310,7 @@ public class DBQuery {
 		Hashtable<String, String> defaults = new Hashtable<String, String>();
 		ResultSet rset1 = null;
 		try {
-			rset1 = getConnection().getMetaData().getColumns(null, schema,
-					tName, null);
+			rset1 = conn.getMetaData().getColumns(null, schema, tName, null);
 			String colValue = null;
 			String colName = null;
 			while (rset1.next()) {
@@ -417,7 +373,7 @@ public class DBQuery {
 
 			ResultSet rset = null;
 			try {
-				rset = getConnection().createStatement().executeQuery(
+				rset = conn.createStatement().executeQuery(
 						"select * from " + tableName);
 				Vector<Vector<Object>> data = new Vector<Vector<Object>>();
 

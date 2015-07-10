@@ -1,9 +1,11 @@
 package org.bkslab.CytoSQL;
 
+import java.sql.DriverManager;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkParser;
@@ -15,7 +17,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
-
+import static org.mockito.Mockito.when;
 
 public class DatabaseNetworkParserTest {
 
@@ -23,28 +25,43 @@ public class DatabaseNetworkParserTest {
 	
 	@Test
 	public void parseTest(){
+		
+		TaskMonitor taskMonitor = mock(TaskMonitor.class);
+		
+		
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		final String sqlQuery = "SELECT * FROM NETWORK;";
 		
-		
-		DBConnectionInfo connInfo = new DBConnectionInfo(
-			"default", "org.sqlite.JDBC", url, "", "", "", "");
-		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(
-			sqlQuery, "", 1, 2, -1, "pp", "", true, false);
-		DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
-		CyNetwork network = support.getNetwork();
-		TaskMonitor taskMonitor = mock(TaskMonitor.class);
+		DBQuery dbQuery;
 		try {
+			dbQuery = new DBQuery(DriverManager.getConnection(url, "", ""), "");
+
+			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
+			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
+		
+			DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(
+					sqlQuery, "", 1, 2, -1, "pp", "", true, false);
+			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
+			CyNetwork network = support.getNetwork();
+
 			parser.parse(taskMonitor, network, sqlQuery);
+
+
+			int nodeCount = network.getNodeCount();
+			int edgeCount = network.getEdgeCount();
+			assertEquals(nodeCount, 4);
+			assertEquals(edgeCount, 5);
+			
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			fail();
-		}
-		int nodeCount = network.getNodeCount();
-		int edgeCount = network.getEdgeCount();
-		assertEquals(nodeCount, 4);
-		assertEquals(edgeCount, 5);
+		} 
+		
+
 	}
 	
 	
@@ -58,13 +75,17 @@ public class DatabaseNetworkParserTest {
 		network.getRow(node1).set(CyNetwork.SELECTED, true);
 		
 		
-		
-		DBConnectionInfo connInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");		
 		final String sqlQuery = "SELECT name AS source, name AS target FROM selected_nodes;";		
 		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
 		
 		try {
-			DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
+			DBQuery dbQuery = new DBQuery(
+				DriverManager.getConnection("jdbc:postgresql://localhost/momeara", "momeara", "che8ga5R"), "");
+
+			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
+			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
+				
+			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 			parser.addSelectedNodes(network);
 			parser.parse(taskMonitor, network, sqlQuery);
 		} catch (Exception e) {
@@ -92,11 +113,17 @@ public class DatabaseNetworkParserTest {
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		
 		final String sqlQuery = "SELECT network.source, network.target FROM selected_nodes LEFT JOIN network ON selected_nodes.name = network.source;";		
-		DBConnectionInfo connInfo = new DBConnectionInfo("default", "org.sqlite.JDBC", url, "", "", "", "");
 		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
 		
 		try {
-			DatabaseNetworkParser parser = new DatabaseNetworkParser(connInfo, dnmp);
+			DBQuery dbQuery = new DBQuery(
+				DriverManager.getConnection(url, "", ""), "");
+
+			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
+			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
+			
+			
+			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 			parser.addSelectedNodes(network);
 			parser.parse(taskMonitor, network, sqlQuery);
 		} catch (Exception e) {

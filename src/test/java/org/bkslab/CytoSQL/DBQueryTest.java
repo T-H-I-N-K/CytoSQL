@@ -2,16 +2,22 @@ package org.bkslab.CytoSQL;
 
 import static org.junit.Assert.*;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.DatabaseHelper;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DBQueryTest {
 
@@ -51,10 +57,11 @@ public class DBQueryTest {
 
 	//@Test
 	public void TestPostgresGetSchemas() {
-		DBConnectionInfo postgresInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");
-		
+
+		Connection conn;
 		try {
-			DBQuery dbQuery = new DBQuery(postgresInfo);
+			conn = DriverManager.getConnection("jdbc:postgresql://localhost/momeara", "momeara", "che8ga5R");
+			DBQuery dbQuery = new DBQuery(conn, "sea_chembl18");
 			for(String schema : dbQuery.getSchemas()){
 				System.out.println("Schema: " + schema);
 			}
@@ -67,10 +74,11 @@ public class DBQueryTest {
 	 
 	//@Test
 	public void TestPostgresDBQueryGetResults() {
-		DBConnectionInfo postgresInfo = new DBConnectionInfo("default", "org.postgresql.Driver", "jdbc:postgresql://localhost", "momeara", "che8ga5R", "momeara", "sea_chembl");
-		
+
 		try {
-			DBQuery dbQuery = new DBQuery(postgresInfo);
+			Connection conn;
+			conn = DriverManager.getConnection("jdbc:postgresql://localhost/momeara", "momeara", "che8ga5R");
+			DBQuery dbQuery = new DBQuery(conn, "sea_chembl18");
 			ResultSet resultSet = dbQuery.getResults("SELECT * FROM sea_chembl18.scores LIMIT 4;");
 			assertEquals(resultSet.next(), true);
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -96,10 +104,10 @@ public class DBQueryTest {
 	@Test
 	public void TestSQLiteDBQueryGetResults() {
 		
-		
 		final String url = DatabaseHelper.CreateSimpleNetwork();		
 		try {
-			DBQuery dbQuery = new DBQuery(new DBConnectionInfo("default", "org.sqlite.JDBC", url, "", "", "", ""));
+			Connection conn = DriverManager.getConnection(url, "", "");
+			DBQuery dbQuery = new DBQuery(conn, "");
 			ResultSet resultSet = dbQuery.getResults("SELECT * FROM network;");
 			assertEquals(resultSet.next(), true);
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();

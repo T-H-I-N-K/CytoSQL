@@ -20,8 +20,6 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 
 	private final DBConnectionManager dbConnectionManager;
 	
-	// Database parameters
-	private DBConnectionInfo dbConnectionInfo;
 		
 	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
@@ -30,8 +28,6 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 	private DatabaseNetworkParser parser;
 	
 	private boolean isCanceled;
-	
-	private final CyLayoutAlgorithmManager cyLayoutAlgorithmManager;
 	
 	@ProvidesTitle	
 	public String getTitle() {
@@ -47,10 +43,6 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 		
 		this.dbConnectionManager = dbConnectionManager;
 
-		this.cyLayoutAlgorithmManager = cyLayoutAlgorithmManager;
-		
-		dbConnectionInfo = dbConnectionManager.getDBConnectionInfo();
-
 		dnmp = new DatabaseNetworkMappingParameters();
 	}
 
@@ -62,7 +54,7 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 		CyNetwork network = view.getModel();
 
 		try {
-			parser = new DatabaseNetworkParser(dbConnectionInfo, dnmp);
+			parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 			parser.parse(taskMonitor, network, dnmp.sqlQuery);
 		} catch(Exception e){
 			System.out.println("Failed to parse SQL query into network:\n" + e.getMessage());

@@ -104,7 +104,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		
 		
 
-		parser = new DatabaseNetworkParser(dbConnectionInfo, dnmp);
+		parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 
 		try {
 			parser.parse(taskMonitor, network, dnmp.sqlQuery);
