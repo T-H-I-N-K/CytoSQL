@@ -44,7 +44,7 @@ To connect to a database requires making the Java driver available, and then spe
 * Set save state of the database connection info hidden table
 * Have forms adjust when the dimensions of the windows are changed.
 
-
+* This connection has closed error
 
 
 

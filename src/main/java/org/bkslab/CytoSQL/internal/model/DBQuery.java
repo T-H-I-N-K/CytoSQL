@@ -85,42 +85,64 @@ public class DBQuery {
 			List<CyNode> nodes,
 			final String tableName) throws Exception {
 		
-		int nCols = 0;
+		
+		List<String> columnsToCreate = new ArrayList<String>();
+		
 		try {
+
+
 			if(nodes.isEmpty()){
 				return;
 			}
 			Statement createTempTableStmt = conn.createStatement();
 			String sql = "CREATE TEMPORARY TABLE " + tableName + " (";
+			
 			for(CyColumn column : network.getDefaultNodeTable().getColumns()){
 				if(column.getName() == "SUID"){ continue;}
 				if(column.getName() == "selected"){ continue;}				
-				if(nCols > 0){ sql += ", "; }
-				nCols++;
-				
+
 				
 				Class<?> cytoscapeColClass = column.getType();
 				
-				switch( DatabaseNetworkParser.CytoscapeTypeToSQLType( cytoscapeColClass)){
+				int SQLType;
+				try{
+					SQLType = DatabaseNetworkParser.CytoscapeTypeToSQLType( cytoscapeColClass);
+				} catch(Exception e){
+					continue;
+				}
+					
+				switch(SQLType){ 
 				case Types.INTEGER:
+					if(columnsToCreate.size() > 0){ sql += ", "; }
 					sql += "\"" + column.getName() + "\" INTEGER";
 					break;
 				case Types.BIGINT:
+					if(columnsToCreate.size() > 0){ sql += ", "; }
 					sql += "\"" + column.getName() + "\" BIGINT";
 					break;
 				case Types.DOUBLE:
-					sql += "\"" + column.getName() + "\" DOUBLE";
+					if(columnsToCreate.size() > 0){ sql += ", "; }
+					sql += "\"" + column.getName() + "\" DOUBLE PRECISION";
 					break;
 				case Types.VARCHAR:
+					if(columnsToCreate.size() > 0){ sql += ", "; }
 					sql += "\"" + column.getName() + "\" VARCHAR";
 					break;
 				case Types.BOOLEAN:
+					if(columnsToCreate.size() > 0){ sql += ", "; }
 					sql += "\"" + column.getName() + "\" BOOLEAN";
 					break;
 				default:
-					throw new Exception("Unrecogized sql type for cytoscape type " + cytoscapeColClass);
+					// TODO how to handle lists?
+					System.err.println("Unrecogized sql type for cytoscape type " + cytoscapeColClass);
+					continue;
 				}
+				columnsToCreate.add(column.getName());
 			}
+			if(columnsToCreate.size() == 0){
+				return;
+			}
+			
 			sql += ");";
 			System.out.println("SQL: " + sql);
 			createTempTableStmt.executeUpdate(sql);
@@ -133,14 +155,12 @@ public class DBQuery {
 		try {
 			PreparedStatement insertStmt;
 			insertStmt = conn.prepareStatement(
-				"INSERT INTO " + tableName + " VALUES ( " + String.join(", ",  Collections.nCopies(nCols,  "?")) + ");");
+				"INSERT INTO " + tableName + " VALUES ( " + String.join(", ",  Collections.nCopies(columnsToCreate.size(),  "?")) + ");");
 			for(CyNode node : nodes){
+				Map<String, Object> nodeValues = network.getRow(node).getAllValues();
 				int colIndex = 1;
-				for(Map.Entry<String, Object> column : network.getRow(node).getAllValues().entrySet()){
-					if(column.getKey() == "SUID") { continue; }
-					if(column.getKey() == "selected") { continue; }
-					
-					insertStmt.setObject(colIndex, column.getValue());
+				for(String colName : columnsToCreate){
+					insertStmt.setObject(colIndex, nodeValues.get(colName));
 					colIndex++;
 				}
 				insertStmt.executeUpdate();
@@ -153,15 +173,48 @@ public class DBQuery {
 	
 	public void deleteTempTable(
 		final String tableName){
-	
+		boolean containsTable = false;
+		try {
+			if(this.conn.getMetaData().getDriverName().indexOf("PostgreSQL") >= 0){
+				List<String> tempTables = getTables("TEMPORARY TABLE");
+				System.out.println("Temporary Tables:");
+				for(String tempTable : tempTables){
+					System.out.println("\t" + tempTable);
+				}
+				
+				List<String> allTables = getTables("TABLE");
+				System.out.println("All tables:\n");
+				for(String tbl : allTables){
+					System.out.println("\t" + tbl);
+				}
+				
+				if(getTables("TEMPORARY TABLE").contains(tableName)){
+					containsTable = true;
+				}
+			} else {
+				if(getTables("TABLE").contains(tableName)){
+					containsTable = true;
+				}
+			}
+		} catch (SQLException e1) {
+			System.out.println("Unable to delete temporary table because the connection has been lost.\n");
+			e1.getMessage();
+			e1.printStackTrace();
+			return;
+		}
+		
+		if(!containsTable){
+			return;
+		}
+		
 		try {
 			Statement createTempTableStmt = conn.createStatement();
 			createTempTableStmt.executeUpdate(
 				"DROP TABLE " + tableName + ";");
 			createTempTableStmt.close();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Unable to delete temporary table:\n");
+			e.getMessage();
 		}
 	}
 	
@@ -242,6 +295,10 @@ public class DBQuery {
 	 * @return tables list, filtered by schema
 	 */
 	public synchronized List<String> getTables(final String tableType) {
+		return getTables(tableType, false);
+	}
+	
+	public synchronized List<String> getTables(final String tableType, boolean withSchema) {
 
 		ArrayList<String> list = new ArrayList<String>();
 		ResultSet rset = null;
@@ -250,7 +307,15 @@ public class DBQuery {
 				null, getSchema(), null, new String[] { tableType });
 			while (rset.next())
 				try {
-					list.add(rset.getString(3));
+					String tableName = "";
+					if(withSchema){
+						String schema = rset.getString(2);
+						if(schema != null){
+							tableName += schema + ".";
+						}
+					}
+					tableName += rset.getString(3);
+					list.add(tableName);
 				} catch (SQLException ex1) {
 					ex1.printStackTrace();
 				}
@@ -448,4 +513,6 @@ public class DBQuery {
 		return model;
 	}
 
+	
+	
 }

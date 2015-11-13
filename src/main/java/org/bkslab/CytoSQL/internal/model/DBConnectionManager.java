@@ -28,7 +28,7 @@ public class DBConnectionManager {
 	}
 	
 	
-	public void saveDBConnectionInfo(final DBConnectionInfo dbConnectionInfo){
+	public void saveDBConnectionInfo(final DBConnectionInfo dbConnectionInfo) throws Exception{
 		try{
 			propertiesSaver.saveProperties(
 				DBConnectionInfo.SAVER_TABLE,
@@ -39,8 +39,8 @@ public class DBConnectionManager {
 		}
 		
 		// next time a new dbQuery is requested, reconnect to the database.
-		dbQuery.close();
-		dbQuery = null;
+		Connection connection = makeConnection(dbConnectionInfo);
+		dbQuery = new DBQuery(connection, dbConnectionInfo.schema);
 	}
 	
 	// this is public to populate the UI with saved data.

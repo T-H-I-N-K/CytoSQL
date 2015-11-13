@@ -1,25 +1,23 @@
 package org.bkslab.CytoSQL.internal.tasks;
 
-import java.util.List;
-
-import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
 import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.task.AbstractNetworkViewTask;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.work.ContainsTunables;
+import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ProvidesTitle;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
 
-public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
+public class DatabaseNetworkExtender extends AbstractTask {
 
 	private final DBConnectionManager dbConnectionManager;
-	
+	private CyEventHelper eventHelper;
+	private VisualMappingManager visualMappingManager;
+	private CyNetworkViewManager networkViewManager;
+	private CyNetwork network;
 		
 	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
@@ -36,10 +34,16 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 	
 	
 	public DatabaseNetworkExtender(
-			CyNetworkView view,
 			final DBConnectionManager dbConnectionManager,
-			final CyLayoutAlgorithmManager cyLayoutAlgorithmManager) {
-		super(view);
+			final CyEventHelper eventHelper,
+			final CyNetworkViewManager networkViewManager,
+			final VisualMappingManager visualMappingManager,
+			CyNetwork network
+	) {
+		this.network = network;
+		this.eventHelper = eventHelper;
+		this.networkViewManager = networkViewManager;
+		this.visualMappingManager = visualMappingManager;
 		
 		this.dbConnectionManager = dbConnectionManager;
 
@@ -51,11 +55,15 @@ public class DatabaseNetworkExtender extends AbstractNetworkViewTask {
 		taskMonitor.setProgress(0.0);
 		taskMonitor.setTitle("Extending network with SQL query.");
 
-		CyNetwork network = view.getModel();
-
 		try {
 			parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
-			parser.parse(taskMonitor, network, dnmp.sqlQuery);
+			parser.parseNetworkExtender(
+				taskMonitor,
+				this.network,
+				this.eventHelper,
+				this.networkViewManager,
+				this.visualMappingManager,
+				dnmp.sqlQuery);
 		} catch(Exception e){
 			System.out.println("Failed to parse SQL query into network:\n" + e.getMessage());
 			return;

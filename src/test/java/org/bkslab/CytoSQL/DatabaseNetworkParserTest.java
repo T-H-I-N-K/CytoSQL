@@ -1,19 +1,21 @@
 package org.bkslab.CytoSQL;
 
 import java.sql.DriverManager;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
 import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkParser;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.NetworkTestSupport;
+import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.work.TaskMonitor;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -34,18 +36,33 @@ public class DatabaseNetworkParserTest {
 		
 		DBQuery dbQuery;
 		try {
+			CyNetwork network = support.getNetwork();
+			
 			dbQuery = new DBQuery(DriverManager.getConnection(url, "", ""), "");
 
 			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
 			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
 		
+			CyEventHelper eventHelper = mock(CyEventHelper.class);
+			Mockito.doNothing().when(eventHelper).flushPayloadEvents();
+	
+			CyNetworkViewManager networkViewManager = mock(CyNetworkViewManager.class);
+			when(networkViewManager.viewExists(network)).thenReturn(false);	
+
+			VisualMappingManager visualMappingManager = mock(VisualMappingManager.class);
+			
 			DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(
-					sqlQuery, "", 1, 2, -1, "pp", "", true, false);
+					sqlQuery, "", 1, 2, -1, "pp", "", "^source_(.*)$", "^target_(.*)$", true, false);
 			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
-			CyNetwork network = support.getNetwork();
 
-			parser.parse(taskMonitor, network, sqlQuery);
 
+			parser.parseNetworkExtender(
+					taskMonitor,
+					network,
+					eventHelper,
+					networkViewManager,
+					visualMappingManager,
+					sqlQuery);
 
 			int nodeCount = network.getNodeCount();
 			int edgeCount = network.getEdgeCount();
@@ -76,7 +93,7 @@ public class DatabaseNetworkParserTest {
 		
 		
 		final String sqlQuery = "SELECT name AS source, name AS target FROM selected_nodes;";		
-		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
+		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", "^source_(.*)$", "^target_(.*)$", true, false);
 		
 		try {
 			DBQuery dbQuery = new DBQuery(
@@ -84,10 +101,24 @@ public class DatabaseNetworkParserTest {
 
 			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
 			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
-				
+			
+			CyEventHelper eventHelper = mock(CyEventHelper.class);
+			Mockito.doNothing().when(eventHelper).flushPayloadEvents();
+	
+			CyNetworkViewManager networkViewManager = mock(CyNetworkViewManager.class);
+			when(networkViewManager.viewExists(network)).thenReturn(false);	
+
+			VisualMappingManager visualMappingManager = mock(VisualMappingManager.class);
+			
 			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 			parser.addSelectedNodes(network);
-			parser.parse(taskMonitor, network, sqlQuery);
+			parser.parseNetworkExtender(
+				taskMonitor,
+				network,
+				eventHelper,
+				networkViewManager,
+				visualMappingManager,
+				sqlQuery);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -113,7 +144,7 @@ public class DatabaseNetworkParserTest {
 		final String url = DatabaseHelper.CreateSimpleNetwork();
 		
 		final String sqlQuery = "SELECT network.source, network.target FROM selected_nodes LEFT JOIN network ON selected_nodes.name = network.source;";		
-		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", true, false);
+		DatabaseNetworkMappingParameters dnmp = new DatabaseNetworkMappingParameters(sqlQuery, "", 1, 2, -1, "pp", "name", "^source_(.*)$", "^target_(.*)$", true, false);
 		
 		try {
 			DBQuery dbQuery = new DBQuery(
@@ -122,10 +153,24 @@ public class DatabaseNetworkParserTest {
 			DBConnectionManager dbConnectionManager = mock(DBConnectionManager.class);
 			when(dbConnectionManager.getDBQuery()).thenReturn(dbQuery);
 			
+			CyEventHelper eventHelper = mock(CyEventHelper.class);
+			Mockito.doNothing().when(eventHelper).flushPayloadEvents();
+	
+			CyNetworkViewManager networkViewManager = mock(CyNetworkViewManager.class);
+			when(networkViewManager.viewExists(network)).thenReturn(false);	
+
+			VisualMappingManager visualMappingManager = mock(VisualMappingManager.class);
 			
 			DatabaseNetworkParser parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 			parser.addSelectedNodes(network);
-			parser.parse(taskMonitor, network, sqlQuery);
+			parser.parseNetworkExtender(
+					taskMonitor,
+					network,
+					eventHelper,
+					networkViewManager,
+					visualMappingManager,
+					sqlQuery);
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

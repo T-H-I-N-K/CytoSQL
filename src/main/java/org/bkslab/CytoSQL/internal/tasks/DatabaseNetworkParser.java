@@ -9,23 +9,27 @@ import java.util.List;
 import java.util.Map;
 import java.io.IOException;
 
-import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
+import org.apache.commons.lang3.StringEscapeUtils;
+
+
+
 import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DBQuery;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
+import org.bkslab.CytoSQL.internal.model.TaskUtils;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.model.subnetwork.CySubNetwork;
+import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.work.TaskMonitor;
 
 public class DatabaseNetworkParser {
 	
-	// Data to keep track of nodes as they are created
-	private Map<Object, CyNode> nMap;
-	
+
 	// Database parameters
 	private final DatabaseNetworkMappingParameters dnmp;
 	private DBQuery dbQuery;
@@ -48,167 +52,415 @@ public class DatabaseNetworkParser {
 		}
 	}
 	
+
 	
-	public void parse(TaskMonitor taskMonitor, CyNetwork network, String sqlQuery) throws Exception {
-		taskMonitor.setTitle("Creating table from SQL query.");
+	public void parseAddNodeAttributes(
+		TaskMonitor taskMonitor,
+		CyNetwork network,
+		CyEventHelper eventHelper,
+		CyNetworkViewManager networkViewManager,
+		VisualMappingManager visualMappingManager,
+		String sqlQuery) throws Exception {
+		taskMonitor.setTitle("Add node attributes from SQL query.");
 		taskMonitor.setProgress(0.0);
 
-		prepareNodeMap(network);
-		
 		ResultSet resultSet = dbQuery.getResults(sqlQuery);
+		ResultSetMetaData metaData = resultSet.getMetaData();
 		
-		validateParameters(network, resultSet);
-		
-		populateNetwork(network, resultSet);
-		
-		resultSet.close();
-		
-		taskMonitor.setProgress(1.0);
-	}
-	
-	private void prepareNodeMap(CyNetwork network){
-		nMap = new HashMap<Object, CyNode>(10000);
-		final List<CyNode> nodes = network.getNodeList();
-		
-		for(final CyNode node : nodes){
-			final Object keyValue = network.getRow(node).getRaw(this.dnmp.getNodeJoinColumnName());
-			if(keyValue != null){
-				nMap.put(keyValue, node);
-			}
-		}
-	}
-	
-	
-	private void validateParameters(CyNetwork network, ResultSet resultSet) throws Exception {
-
 		if(dnmp == null){
 			throw new NullPointerException("No DatabaseNetworkMappingParameters specified.");
+		} else {
+			dnmp.validate(network, resultSet);
 		}
 		
-		dnmp.validate(network, resultSet);
-	}
-	
-
-	
-	private void populateNetwork(CyNetwork network, ResultSet resultSet) throws SQLException, IOException{
-		
-		ResultSetMetaData metaData = resultSet.getMetaData();
+		Map<Object, CyNode> existingNodes = identifyExistingNodes(
+				network,
+				this.dnmp.getNodeJoinColumnName());
+		Map<Object, CyNode> newNodes = new HashMap<Object, CyNode>();
 				
-		addEdgeAttributeColumns(network, metaData);
+		addNodeAttributeColumns(network, metaData);
 		
 		while(resultSet.next()){
 			if(isCanceled){
 				System.out.println("Loading canceled.");
 				resultSet.close();
-				network.dispose();
-				network = null;
+				throw new IOException("Network loading process canceled by user.");
+			}
+			
+			//add the node
+			Object nodeName = resultSet.getObject(dnmp.getSourceIndex());
+			if(resultSet.wasNull()) continue;
+			
+			CyNode node = TaskUtils.getNode(network, existingNodes, nodeName);	
+			addNodeAttributes(network, node, resultSet, this.dnmp);
+		}
+		
+		resultSet.close();
+		
+		TaskUtils.updateCytoscapeNodeViews(
+			eventHelper,
+			networkViewManager,
+			visualMappingManager,
+			network,
+			newNodes.values());
+		
+		taskMonitor.setProgress(1.0);
+	}
+	
+	public void parseNetworkExtender(
+		TaskMonitor taskMonitor,
+		CyNetwork network,
+		CyEventHelper eventHelper,
+		CyNetworkViewManager networkViewManager,
+		VisualMappingManager visualMappingManager,
+		String sqlQuery
+		) throws Exception {
+		taskMonitor.setTitle("Extending a network from SQL query.");
+		taskMonitor.setProgress(0.0);
+
+		ResultSet resultSet = dbQuery.getResults(sqlQuery);
+		ResultSetMetaData metaData = resultSet.getMetaData();
+		
+		Map<Object, CyNode> existingNodes = identifyExistingNodes(network, this.dnmp.getNodeJoinColumnName());
+		Map<Object, CyNode> newNodes = new HashMap<Object, CyNode>();
+		Map<Object, CyEdge> newEdges = new HashMap<Object, CyEdge>();
+		
+		
+		addSourceAttributeColumns(network, metaData, dnmp);
+		addTargetAttributeColumns(network, metaData, dnmp);
+		addEdgeAttributeColumns(network, metaData, dnmp);
+				
+		while(resultSet.next()){
+			if(isCanceled){
+				System.out.println("Loading canceled.");
+				resultSet.close();
 				throw new IOException("Network loading process canceled by user.");
 			}
 			
 			// add the nodes
-			final CyNode source = createNode(network, resultSet, dnmp.getSourceIndex());
-			final CyNode target = createNode(network, resultSet, dnmp.getTargetIndex());
-			
+			Object sourceNodeName = resultSet.getObject(dnmp.getSourceIndex());
+			CyNode source = null;
+			if(sourceNodeName != null){
+				source = TaskUtils.getNode(network, existingNodes, sourceNodeName);
+				addSourceNodeAttributes(network, source, newNodes, resultSet, dnmp);
+			}
+
+			Object targetNodeName = resultSet.getObject(dnmp.getTargetIndex());
+			CyNode target = null;
+			if(targetNodeName != null){
+				target = TaskUtils.getNode(network, existingNodes, targetNodeName);
+				addTargetNodeAttributes(network, target, newNodes, resultSet, dnmp);
+			}
+				
 			// Single column nodes list.  Just add nodes.
 			if(source == null || target == null) continue;
 			
-
 			//add the edge
 			CyEdge edge = network.addEdge(source, target, dnmp.isDirected());
+			addEdgeAttributes(network, source, target, edge, resultSet, dnmp);
+				
+		}
+		
+		resultSet.close();
+		
+		TaskUtils.updateCytoscapeNodeViews(
+			eventHelper,
+			networkViewManager,
+			visualMappingManager,
+			network,
+			newNodes.values());
+		
+		TaskUtils.updateCytoscapeEdgeViews(
+			eventHelper,
+			networkViewManager,
+			visualMappingManager,
+			network,
+			newEdges.values());
+		
+		taskMonitor.setProgress(1.0);
+		
+		
+	}
+	
+	
+	private Map<Object, CyNode> identifyExistingNodes(CyNetwork network, final String joinColumnName){
+		Map<Object, CyNode> existingNodes = new HashMap<Object, CyNode>(10000);
+		final List<CyNode> nodes = network.getNodeList();
+		
+		for(final CyNode node : nodes){
+			final Object keyValue = network.getRow(node).getRaw(joinColumnName);
+			if(keyValue != null){
+				existingNodes.put(keyValue, node);
+			}
+		}
+		return existingNodes;
+	}
+	
+	
+	private void addNodeAttributes(
+		CyNetwork network,
+		CyNode node,
+		ResultSet resultSet,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException, IOException{
+	
+		if(node == null) return;
+		
+		ResultSetMetaData metaData = resultSet.getMetaData();
+		
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			if(!dnmp.isNodeAttribute(i)) continue;
+			
+			Object value = resultSet.getObject(i);
+			if(resultSet.wasNull()) continue;
+			
+			if(value.getClass() == String.class){
+				value = StringEscapeUtils.unescapeJava((String)value);
+			}
 
-			// maybe we can just rely on the sql query result to have columns named 'interaction' and 'name'?
-			String interaction;
-			if(dnmp.getInteractionIndex() == -1){
+			network.getRow(node).set(metaData.getColumnLabel(i), value);
+		}
+		
+	}
+	
+	private boolean addSourceNodeAttributes(
+		CyNetwork network,
+		CyNode node,
+		Map<Object, CyNode> newNodes,
+		ResultSet resultSet,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException, IOException{
+	
+		ResultSetMetaData metaData = resultSet.getMetaData();
+		
+		if(node == null) return false;
+		
+		Object nodeName = resultSet.getObject(dnmp.getSourceIndex());
+		if (newNodes.containsKey(nodeName)) return false;
+		newNodes.put(nodeName, node);
+		
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			if(!dnmp.isSourceAttribute(i, metaData.getColumnLabel(i))) continue;
+			
+			Object value = resultSet.getObject(i);
+			if(resultSet.wasNull()) continue;
+			
+			if(value.getClass() == String.class){
+				value = StringEscapeUtils.unescapeJava((String)value);
+			}
+
+			network.getRow(node).set(dnmp.getSourceColumnName(metaData.getColumnLabel(i)), value);
+		}
+		return true;
+		
+	}
+	
+	// return true if attributes for the node were added
+	private boolean addTargetNodeAttributes(
+		CyNetwork network,
+		CyNode node,
+		Map<Object, CyNode> newNodes,
+		ResultSet resultSet,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException, IOException{
+	
+		if(node == null) return false;
+		
+		Object nodeName = resultSet.getObject(dnmp.getTargetIndex());
+		if (newNodes.containsKey(nodeName)) return false;
+		newNodes.put(nodeName, node);
+	
+		ResultSetMetaData metaData = resultSet.getMetaData();			
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			if(!dnmp.isTargetAttribute(i, metaData.getColumnLabel(i))) continue;
+			
+			Object value = resultSet.getObject(i);
+			if(resultSet.wasNull()) continue;
+			
+			if(value.getClass() == String.class){
+				value = StringEscapeUtils.unescapeJava((String)value);
+			}
+
+			network.getRow(node).set(dnmp.getTargetColumnName(metaData.getColumnLabel(i)), value);
+		}
+		return true;
+		
+	}
+
+	private void addEdgeAttributes(
+		CyNetwork network,
+		CyNode source,
+		CyNode target,
+		CyEdge edge,
+		ResultSet resultSet,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException, IOException{
+		
+		ResultSetMetaData metaData = resultSet.getMetaData();
+		
+		// maybe we can just rely on the sql query result to have columns named 'interaction' and 'name'?
+		String interaction;
+		if(dnmp.getInteractionIndex() == -1){
+			interaction = dnmp.getDefaultInteraction();
+		} else {
+			interaction = resultSet.getString(dnmp.getInteractionIndex());
+			if(resultSet.wasNull()){
 				interaction = dnmp.getDefaultInteraction();
-			} else {
-				interaction = resultSet.getString(dnmp.getInteractionIndex());
-				if(resultSet.wasNull()){
-					interaction = dnmp.getDefaultInteraction();
-				}
 			}
-								
-			network.getRow(edge).set("interaction", interaction);
-			String edgeName = 
-					network.getRow(source).get(CyNetwork.NAME, String.class) + 
-					" ("+interaction+") " +
-					network.getRow(target).get(CyNetwork.NAME, String.class);
-			network.getRow(edge).set(CyNetwork.NAME, edgeName);
+		}
+							
+		network.getRow(edge).set("interaction", interaction);
+		String edgeName = 
+			network.getRow(source).get(CyNetwork.NAME, String.class) + 
+			" ("+interaction+") " +
+			network.getRow(target).get(CyNetwork.NAME, String.class);
+		network.getRow(edge).set(CyNetwork.NAME, edgeName);
 
-			// add the edge attributes
-			for (int i = 1; i <= metaData.getColumnCount(); i++) {
-				if(!dnmp.isEdgeAttribute(i)) continue;
-				
-				Object value = resultSet.getObject(i);
-				if(resultSet.wasNull()) continue;
-				
-//				if(dnmp.isListAttribute(i)){
-//					addList(network, edge, resultSet, i);
-//				} else {
-					network.getRow(edge).set(metaData.getColumnLabel(i), value);
-//				}
+		// add the edge attributes
+		for (int i = 1; i <= metaData.getColumnCount(); i++) {
+			if(!dnmp.isEdgeAttribute(i, metaData.getColumnLabel(i))) continue;
+			
+			Object value = resultSet.getObject(i);
+			if(resultSet.wasNull()) continue;
+			
+			if(value.getClass() == String.class){
+				value = StringEscapeUtils.unescapeJava((String)value);
+			} else if(value.getClass() == Float.class){
+				value = new Double(((Float)value).doubleValue());
 			}
-				
+			
+			network.getRow(edge).set(metaData.getColumnLabel(i), value);
 		}
 	}
 	
-	private void addEdgeAttributeColumns(CyNetwork network, ResultSetMetaData metaData) throws SQLException{
+	
+	private void addNodeAttributeColumns(CyNetwork network, ResultSetMetaData metaData) throws SQLException{
+
+		CyTable nodeAttributesTable = network.getDefaultNodeTable();
+		
+		// add edge attributes columns to the network
+		for(int i = 1; i <= metaData.getColumnCount(); i++){	
+			if(!dnmp.isNodeAttribute(i)) continue;
+			
+			Class<?> attributeType;
+			try{
+				attributeType = SQLTypeToCytoscapeType(metaData.getColumnType(i));
+			} catch(Exception e) {
+				throw new SQLException(e.getMessage() + " For node column '" + metaData.getColumnLabel(i) + "'");
+			}
+
+			try{
+				nodeAttributesTable.createColumn(metaData.getColumnLabel(i), attributeType, dnmp.isMutable());
+			} catch(IllegalArgumentException e) {
+				// column already exists, do nothing.
+			}
+		}
+	}
+	
+	private void addSourceAttributeColumns(
+		CyNetwork network,
+		ResultSetMetaData metaData,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException{
+
+		CyTable nodeAttributesTable = network.getDefaultNodeTable();
+		
+		// add edge attributes columns to the network
+		for(int i = 1; i <= metaData.getColumnCount(); i++){	
+			if(!dnmp.isSourceAttribute(i, metaData.getColumnLabel(i))) continue;
+			
+			Class<?> attributeType;
+			try{
+				attributeType = SQLTypeToCytoscapeType(metaData.getColumnType(i));
+			} catch(Exception e) {
+				throw new SQLException(e.getMessage() + " For source column '" + metaData.getColumnLabel(i) + "'");
+			}
+
+			try{
+				nodeAttributesTable.createColumn(metaData.getColumnLabel(i), attributeType, dnmp.isMutable());
+			} catch(IllegalArgumentException e) {
+				// column already exists, do nothing.
+			}
+		}
+	}
+	
+	private void addTargetAttributeColumns(
+		CyNetwork network,
+		ResultSetMetaData metaData,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException{
+
+		CyTable nodeAttributesTable = network.getDefaultNodeTable();
+		
+		// add edge attributes columns to the network
+		for(int i = 1; i <= metaData.getColumnCount(); i++){	
+			if(!dnmp.isTargetAttribute(i, metaData.getColumnLabel(i))) continue;
+			
+			Class<?> attributeType;
+			try{
+				attributeType = SQLTypeToCytoscapeType(metaData.getColumnType(i));
+			} catch(Exception e) {
+				throw new SQLException(e.getMessage() + " For target column '" + metaData.getColumnLabel(i) + "'");
+			}
+
+			try{
+				nodeAttributesTable.createColumn(metaData.getColumnLabel(i), attributeType, dnmp.isMutable());
+			} catch(IllegalArgumentException e) {
+				// column already exists, do nothing.
+			}
+		}
+	}
+	
+	
+	private void addEdgeAttributeColumns(
+		CyNetwork network,
+		ResultSetMetaData metaData,
+		DatabaseNetworkMappingParameters dnmp
+		) throws SQLException{
 
 		CyTable edgeAttributesTable = network.getDefaultEdgeTable();
 		
 		// add edge attributes columns to the network
 		for(int i = 1; i <= metaData.getColumnCount(); i++){	
-			if(!dnmp.isEdgeAttribute(i)) continue;
-			
-//			if(!dnmp.isListAttribute(i)){
-				Class<?> attributeType;
-				try{
-					attributeType = SQLTypeToCytoscapeType(metaData.getColumnType(i));
-				} catch(Exception e) {
-					throw new SQLException(e.getMessage() + " For column '" + metaData.getColumnLabel(i) + "'");
-				}
+			if(!dnmp.isEdgeAttribute(i, metaData.getColumnLabel(i))) continue;		
 
-				edgeAttributesTable.createListColumn(metaData.getColumnLabel(i), attributeType, dnmp.isMutable());
-//			} else {
-//				Class<?> listAttributeType;
-//				try{
-//					listAttributeType = dnmp.getListAttributeType(i);
-//				} catch(Exception e) {
-//					throw new SQLException(e.getMessage() + " For list column '" + metaData.getColumnLabel(i) + "'");
-//				}
-//
-//				edgeAttributesTable.createColumn(metaData.getColumnLabel(i), listAttributeType, dnmp.isMutable());
-//			}	
+			Class<?> attributeType;
+			try{
+				attributeType = SQLTypeToCytoscapeType(metaData.getColumnType(i));
+			} catch(Exception e) {
+				throw new SQLException(e.getMessage() + " For column '" + metaData.getColumnLabel(i) + "'");
+			}
+
+			try{
+				edgeAttributesTable.createColumn(metaData.getColumnLabel(i), attributeType, dnmp.isMutable());
+			} catch(IllegalArgumentException e) {
+				// column already exists, do nothing.
+				// is there a better way to test if a column exists?
+			}
+
 		}
 	}
-	
-	private CyNode createNode(CyNetwork network, ResultSet resultSet, int nodeIndex) throws SQLException{
-		if(nodeIndex == -1) return null;
-		
-		String nodeName = resultSet.getString(nodeIndex);
-		if(resultSet.wasNull()) return null;
-		
-		if (this.nMap.get(nodeName) == null){
-			// node does not exist yet, create it
-			CyNode node = network.addNode();
-			network.getRow(node).set(CyNetwork.NAME, nodeName);
-			this.nMap.put(nodeName, network.getNode(node.getSUID()));
-			return node;
-		}
-		else {// already existed in parent network
-			CyNode parentNode = this.nMap.get(nodeName);
-			CySubNetwork subnet = (CySubNetwork) network;
-			subnet.addNode(parentNode);
-			CyNode existingNode = subnet.getNode(parentNode.getSUID());
-			return existingNode;
-		}
-	}
+
 	
 	public static Class<?> SQLTypeToCytoscapeType(int sqlType) throws SQLException{
 		switch(sqlType){
+		case Types.BIT:
+			return Boolean.class;
+		case Types.TINYINT:
+		case Types.SMALLINT:
 		case Types.INTEGER:
 			return Integer.class;
 		case Types.BIGINT:
 			return Long.class;
+		case Types.DECIMAL:
+			System.out.println("Warning: converting JDBC type DECIMAL to java 'Double'");
+			return Double.class;
+		case Types.NUMERIC:
+			System.out.println("Warning: converting JDBC type NUMERIC to java 'Double'");
+			return Double.class;
+		case Types.REAL:
+		case Types.FLOAT:
+			return Double.class; // should these be 'Float' for cytoscape?
 		case Types.DOUBLE:
 			return Double.class;
 		case Types.CHAR:
@@ -263,6 +515,8 @@ public class DatabaseNetworkParser {
 //	}
 	
 	public void addSelectedNodes(CyNetwork network){
+		cleanSelectedNodes();
+		
 		List<CyNode> selected_nodes = CyTableUtil.getNodesInState(network, "selected", true);
 		try {
 			dbQuery.copyToTempTable(network, selected_nodes, "selected_nodes");
@@ -271,7 +525,7 @@ public class DatabaseNetworkParser {
 			e.printStackTrace();
 		}
 	}
-	
+		
 	public void cleanSelectedNodes(){
 		dbQuery.deleteTempTable("selected_nodes");
 	}

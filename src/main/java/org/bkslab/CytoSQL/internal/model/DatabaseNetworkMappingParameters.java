@@ -3,6 +3,8 @@ package org.bkslab.CytoSQL.internal.model;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.work.Tunable;
@@ -46,7 +48,17 @@ public class DatabaseNetworkMappingParameters {
 	
 	//@Tunable(description="Default interaction", groups="Network Mapping")
 	public String defInteraction;
-		
+
+	//@Tunable(description="Source column pattern", groups="Network Mapping")
+	public String sourceColumnPatternString;
+	
+	private Pattern sourceColumnPattern;
+
+	//@Tunable(description="Target column pattern", groups="Network Mapping")
+	public String targetColumnPatternString;
+	
+	private Pattern targetColumnPattern;
+
 	//@Tunable(description="Is the added network mutable?", groups="Network Mapping")
 	public boolean isMutable;
 	
@@ -65,6 +77,8 @@ public class DatabaseNetworkMappingParameters {
 			final int interaction,
 			final String defInteraction,
 			final String nodeJoinColumnName,
+			final String sourceColumnPatternString,
+			final String targetColumnPatternString,
 			final boolean isMutable,
 			final boolean isDirected) {
 		
@@ -82,6 +96,12 @@ public class DatabaseNetworkMappingParameters {
 		this.interaction = interaction;
 		this.defInteraction = defInteraction;
 		this.nodeJoinColumnName = nodeJoinColumnName;
+		this.sourceColumnPatternString = sourceColumnPatternString;
+		this.sourceColumnPattern = Pattern.compile(sourceColumnPatternString);
+		
+		this.targetColumnPatternString = targetColumnPatternString;
+		this.targetColumnPattern = Pattern.compile(targetColumnPatternString);
+		
 		this.isMutable = isMutable;
 		this.isDirected = isDirected;
 	}
@@ -128,8 +148,43 @@ public class DatabaseNetworkMappingParameters {
 		return nodeJoinColumnName;
 	}
 	
-	public boolean isEdgeAttribute(final int i){
-		return (i != getSourceIndex())  && (i != getTargetIndex()) &&	(i != getInteractionIndex());
+	public boolean isNodeAttribute(final int i){
+		return (i != getSourceIndex());
+	}
+	
+	public boolean isSourceAttribute(final int i, final String columnName){
+		Matcher m = this.sourceColumnPattern.matcher(columnName);
+		return (i != getSourceIndex() && m.matches());
+	}
+
+	public String getSourceColumnName(final String columnName){
+		Matcher m = this.sourceColumnPattern.matcher(columnName);
+		if(m.matches()){
+			return m.group(1);
+		} else {
+			return null;
+		}
+	}
+	
+	public boolean isTargetAttribute(final int i, final String columnName){
+		Matcher m = this.targetColumnPattern.matcher(columnName);
+		return (i != getTargetIndex() && m.matches());
+	}
+
+	public String getTargetColumnName(final String columnName){
+		Matcher m = this.targetColumnPattern.matcher(columnName);
+		if(m.matches()){
+			return m.group(1);
+		} else {
+			return null;
+		}
+	}
+	
+	public boolean isEdgeAttribute(final int i, final String columnName){
+		return 
+			!isSourceAttribute(i, columnName) &&
+			!isTargetAttribute(i, columnName) &&
+			(i != getInteractionIndex());
 	}
 	
 	public boolean isMutable() {

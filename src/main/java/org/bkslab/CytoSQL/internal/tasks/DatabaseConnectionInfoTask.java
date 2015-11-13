@@ -38,6 +38,10 @@ public class DatabaseConnectionInfoTask extends AbstractTask {
 	
 	public void run(final TaskMonitor taskMonitor) {
 		taskMonitor.setTitle("Saving CytoSQL Database Connection Info");
-		dbConnectionManager.saveDBConnectionInfo(dbConnectionInfo);
+		try{
+			dbConnectionManager.saveDBConnectionInfo(dbConnectionInfo);
+		} catch (Exception e){
+			System.out.println(e.getMessage());
+		}
 	}
 }

@@ -205,7 +205,10 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			.addGroup(
 				layout.createSequentialGroup()
 				.addContainerGap()
-				.addComponent(sqlTextLabel)
+				.addComponent(sqlTextLabel,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE)
 				.addContainerGap(
 					javax.swing.GroupLayout.DEFAULT_SIZE,
 					Short.MAX_VALUE))
@@ -234,7 +237,10 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			.addGroup(
 				layout.createSequentialGroup()
 				.addContainerGap()
-				.addComponent(sqlTextLabel)
+				.addComponent(sqlTextLabel,
+						javax.swing.GroupLayout.PREFERRED_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE,
+						javax.swing.GroupLayout.DEFAULT_SIZE)
 				.addPreferredGap(
 					javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 				.addComponent(sqlText,
@@ -625,7 +631,7 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			 List<String> tablesList;
 			try {
 				System.out.println("Available tables:");
-				tablesList = dbQuery.getTables("TABLE");
+				tablesList = dbQuery.getTables("TABLE", true);
 				for(String tableName : tablesList){
 					 System.out.println("\t\"" + tableName +"\"");
 				 }
@@ -687,6 +693,8 @@ public class DatabaseNetworkMappingParametersHandler extends AbstractGUITunableH
 			3,
 			"pp",
 			"name",
+			"^source_(.*)$",
+			"^target_(.*)$",
 			true,
 			false);
 		try {

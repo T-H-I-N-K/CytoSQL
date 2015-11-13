@@ -7,6 +7,7 @@ import org.bkslab.CytoSQL.internal.model.DBConnectionInfo;
 import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParameters;
 import org.bkslab.CytoSQL.internal.model.PropertiesSaver;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
@@ -18,6 +19,7 @@ import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ContainsTunables;
 import org.cytoscape.work.ProvidesTitle;
@@ -33,6 +35,7 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	
 	// Database parameters
 	private DBConnectionInfo dbConnectionInfo;
+
 	
 	@Tunable
 	public DatabaseNetworkMappingParameters dnmp;
@@ -48,6 +51,8 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 	private final CyNetworkViewManager cyNetworkViewManager;
 	private final CyNetworkViewFactory cyNetworkViewFactory;
 	private final CyLayoutAlgorithmManager cyLayoutAlgorithmManager;
+	private final CyEventHelper cyEventHelper;
+	private final VisualMappingManager cyVisualMappingManager;
 	
 	@ProvidesTitle	
 	public String getTitle() {
@@ -61,7 +66,9 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		final CyNetworkNaming cyNetworkNaming,
 		final CyNetworkViewManager cyNetworkViewManager,
 		final CyNetworkViewFactory cyNetworkViewFactory,
-		final CyLayoutAlgorithmManager cyLayoutAlgorithmManager) {
+		final CyLayoutAlgorithmManager cyLayoutAlgorithmManager,
+		final CyEventHelper cyEventHelper,
+		final VisualMappingManager cyVisualMappingManager) {
 		
 		this.dbConnectionManager = dbConnectionManager;
 		this.cyNetworkManager = cyNetworkManager;
@@ -70,6 +77,8 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		this.cyNetworkViewManager = cyNetworkViewManager;
 		this.cyNetworkViewFactory = cyNetworkViewFactory;
 		this.cyLayoutAlgorithmManager = cyLayoutAlgorithmManager;
+		this.cyEventHelper = cyEventHelper;
+		this.cyVisualMappingManager = cyVisualMappingManager;
 
 		dbConnectionInfo = this.dbConnectionManager.getDBConnectionInfo();
 		
@@ -107,7 +116,13 @@ public class DatabaseNetworkTableReader extends AbstractTask {
 		parser = new DatabaseNetworkParser(dbConnectionManager, dnmp);
 
 		try {
-			parser.parse(taskMonitor, network, dnmp.sqlQuery);
+			parser.parseNetworkExtender(
+				taskMonitor,
+				network,
+				this.cyEventHelper,
+				this.cyNetworkViewManager,
+				this.cyVisualMappingManager,
+				dnmp.sqlQuery);
 		} catch(Exception e){
 			System.out.println("Failed to parse SQL query into network:\n" + e.getMessage());
 			network.dispose();

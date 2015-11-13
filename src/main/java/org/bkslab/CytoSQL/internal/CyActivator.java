@@ -3,6 +3,7 @@ package org.bkslab.CytoSQL.internal;
 import org.bkslab.CytoSQL.internal.model.DBConnectionManager;
 import org.bkslab.CytoSQL.internal.model.DatabaseNetworkMappingParametersHandlerFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseConnectionInfoTaskFactory;
+import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkAddNodeAttributesFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkExtenderFactory;
 import org.bkslab.CytoSQL.internal.tasks.DatabaseNetworkTableReaderFactory;
 import org.osgi.framework.BundleContext;
@@ -14,6 +15,8 @@ import static org.cytoscape.work.ServiceProperties.MENU_GRAVITY;
 import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
 import static org.cytoscape.work.ServiceProperties.TITLE;
 
+import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
@@ -24,6 +27,7 @@ import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.swing.GUITunableHandlerFactory;
 
@@ -47,6 +51,9 @@ public class CyActivator extends AbstractCyActivator {
 		CyTableManager cyTableManagerServiceRef = getService(context, CyTableManager.class);
 		CyLayoutAlgorithmManager cyLayoutAlgorithmManagerServiceRef = getService(context, CyLayoutAlgorithmManager.class);
 
+		VisualMappingManager vmmServiceRef = getService(context,VisualMappingManager.class);
+		CyApplicationManager cyApplicationManagerServiceRef = getService(context,CyApplicationManager.class);
+		CyEventHelper eventHelper = getService(context, CyEventHelper.class);
 		
 		DBConnectionManager dbConnectionManager = new DBConnectionManager(
 			cyTableFactoryServiceRef,
@@ -72,8 +79,9 @@ public class CyActivator extends AbstractCyActivator {
 			cyNetworkNamingServiceRef,
 			cyNetworkViewManagerServiceRef,
 			cyNetworkViewFactoryServiceRef,
-			cyLayoutAlgorithmManagerServiceRef);
-		
+			cyLayoutAlgorithmManagerServiceRef,
+			eventHelper,
+			vmmServiceRef);
 		Properties databaseNetworkTableReaderFactoryProps = new Properties();		
 		databaseNetworkTableReaderFactoryProps.setProperty(TITLE, "Create Network From Database Query");
 		databaseNetworkTableReaderFactoryProps.setProperty(PREFERRED_MENU, "Apps.CytoSQL");
@@ -83,21 +91,41 @@ public class CyActivator extends AbstractCyActivator {
 		databaseNetworkTableReaderFactoryProps.setProperty(COMMAND_NAMESPACE, "CytoSQL");
 		registerService(context,databaseNetworkTableReaderFactory,TaskFactory.class, databaseNetworkTableReaderFactoryProps);
 		
+
+		DatabaseNetworkMappingParametersHandlerFactory databaseNetworkMappingParametersHandlerFactory =
+			new DatabaseNetworkMappingParametersHandlerFactory(
+				dbConnectionManager);
+		registerService(context,databaseNetworkMappingParametersHandlerFactory,GUITunableHandlerFactory.class, new Properties());
+			
 		
-		DatabaseNetworkExtenderFactory setNetworkBackgroundColorTaskFactory = new DatabaseNetworkExtenderFactory(
+		DatabaseNetworkExtenderFactory databaseNetworkExtenderFactory = new DatabaseNetworkExtenderFactory(
 			dbConnectionManager,	
-			cyLayoutAlgorithmManagerServiceRef);
+			eventHelper,
+			cyNetworkViewManagerServiceRef,
+			cyApplicationManagerServiceRef,
+			vmmServiceRef);
 		Properties databaseNetworkExtenderFactoryProps = new Properties();
 		databaseNetworkExtenderFactoryProps.setProperty(PREFERRED_MENU,"Apps.CytoSQL");
 		databaseNetworkExtenderFactoryProps.setProperty(TITLE,"Extend Network by Query");
 		databaseNetworkExtenderFactoryProps.setProperty(COMMAND, "ExtendNetworkFromQuery");
 		databaseNetworkExtenderFactoryProps.setProperty(COMMAND_NAMESPACE, "CytoSQL");
-		registerService(context,setNetworkBackgroundColorTaskFactory,NetworkViewTaskFactory.class, databaseNetworkExtenderFactoryProps);
+		registerService(context,databaseNetworkExtenderFactory,TaskFactory.class, databaseNetworkExtenderFactoryProps);
 		
-		DatabaseNetworkMappingParametersHandlerFactory databaseNetworkMappingParametersHandlerFactory =
-			new DatabaseNetworkMappingParametersHandlerFactory(
-				dbConnectionManager);
-		registerService(context,databaseNetworkMappingParametersHandlerFactory,GUITunableHandlerFactory.class, new Properties());
+
+		
+		DatabaseNetworkAddNodeAttributesFactory databaseNetworkAddNodeAttributesFactory = new DatabaseNetworkAddNodeAttributesFactory(
+				dbConnectionManager,	
+				eventHelper,
+				cyNetworkViewManagerServiceRef,
+				cyApplicationManagerServiceRef,
+				vmmServiceRef);
+		Properties databaseNetworkAddNodeAttributesProps = new Properties();
+		databaseNetworkAddNodeAttributesProps.setProperty(PREFERRED_MENU,"Apps.CytoSQL");
+		databaseNetworkAddNodeAttributesProps.setProperty(TITLE,"Add Node Attributes by Query");
+		databaseNetworkAddNodeAttributesProps.setProperty(COMMAND, "ExtendNetworkAddNodeAttributes");
+		databaseNetworkAddNodeAttributesProps.setProperty(COMMAND_NAMESPACE, "CytoSQL");
+		registerService(context,databaseNetworkAddNodeAttributesFactory,TaskFactory.class, databaseNetworkAddNodeAttributesProps);
+			
 	}
 }
 

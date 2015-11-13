@@ -280,6 +280,7 @@ public class SQLTextArea extends JScrollPane implements DocumentListener {
 			// setCaretPosition(startpos);//HAE: Added by myself
 			doc.insertString(startpos, text, getStyle("text"));
 			// setCaretPosition(startpos+text.length());//HAE: Added by myself
+			
 			text = doc.getText(0, doc.getLength()).toUpperCase();
 
 			int pos;
@@ -433,7 +434,7 @@ public class SQLTextArea extends JScrollPane implements DocumentListener {
 			// interrupt it...
 			while (true) {
 				// analyze the content...
-				highlight(caretpos);
+				//highlight(caretpos);
 				try {
 					sleep(0xffffff);
 				} catch (InterruptedException x) {
